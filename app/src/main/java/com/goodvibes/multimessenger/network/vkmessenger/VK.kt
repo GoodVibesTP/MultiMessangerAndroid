@@ -2,7 +2,7 @@ package com.goodvibes.multimessenger.network.vkmessenger
 
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import com.goodvibes.multimessenger.LOG_TAG
+import androidx.core.content.PackageManagerCompat.LOG_TAG
 import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.Message
 import com.goodvibes.multimessenger.datastructure.Messengers
@@ -19,12 +19,15 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
+
 class VK(
     private val activity: AppCompatActivity
 ) : Messenger {
+    private val LOG_TAG = "VK_LOG"
+
     override val messenger = Messengers.VK
     private val vkClient = OriginalVKClient
-    private var token = "your_token"
+    private var token = ""
 
     private val permissions = arrayListOf<VKScope>()
 
@@ -379,6 +382,8 @@ object longPoolResponse : Callback<JsonElement> {
         call: Call<JsonElement>,
         response: Response<JsonElement>
     ) {
+        val LOG_TAG = "VK_LOG"
+
         Log.d(LOG_TAG, "$methodName response code: ${response.code()}")
         if (response.isSuccessful) {
             val responseBody = response.body()
@@ -400,6 +405,7 @@ object longPoolResponse : Callback<JsonElement> {
         call: Call<JsonElement>,
         t: Throwable
     ) {
+        val LOG_TAG = "VK_LOG"
         Log.d(LOG_TAG, "$methodName failure: $t")
     }
 }

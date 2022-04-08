@@ -1,5 +1,7 @@
 package com.goodvibes.multimessenger.datastructure
 
+import java.net.URI
+
 
 data class Chat(
     var chatId: Int,
@@ -7,6 +9,6 @@ data class Chat(
     var title: String,
     var lastMessage: Message?,
     var chatType: ChatType,
-    var messenger: Messengers
+    var messenger: Messengers,
 )
 

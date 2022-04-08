@@ -1,5 +1,6 @@
 package com.goodvibes.multimessenger.network.vkmessenger
 
+import com.goodvibes.multimessenger.R
 import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.ChatType
 import com.goodvibes.multimessenger.datastructure.Message
@@ -15,7 +16,7 @@ fun toDefaultChat(
 ) : Chat {
     return Chat(
         chatId = conversationWithMessage.conversation.peer.id,
-        img = 0,
+        img = R.drawable.kotik,
         title = when(conversationWithMessage.conversation.peer.type) {
             VKMessagesConversationPeerType.CHAT -> {
                 conversationWithMessage.conversation.chatSettings.title
