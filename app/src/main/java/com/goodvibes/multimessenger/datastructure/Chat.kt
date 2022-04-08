@@ -1,10 +1,12 @@
 package com.goodvibes.multimessenger.datastructure
 
-public data class Chat(
+
+data class Chat(
+    var chatId: Int,
     var img: Int,
     var title: String,
-    var lastMessage: String,
-    var type: Messengers
-) {
+    var lastMessage: Message?,
+    var chatType: ChatType,
+    var messenger: Messengers
+)
 
-}
