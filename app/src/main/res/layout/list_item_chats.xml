@@ -21,8 +21,7 @@
                     android:layout_width="80dp"
                     android:layout_height="80dp"
                     android:layout_marginStart="20dp"
-                    android:src="@drawable/images">
-            </ImageView>
+                    android:src="@drawable/images"></ImageView>
 
             <LinearLayout
                     android:layout_width="wrap_content"
@@ -37,16 +36,14 @@
                         android:text="Sergey Kyst"
                         android:textColor="@color/black"
                         android:textSize="26sp"
-                        android:textStyle="bold"
-                        />
+                        android:textStyle="bold" />
 
                 <TextView
                         android:id="@+id/last_message"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="5dp"
-                        android:text="Hello world"
-                        />
+                        android:text="Hello world" />
 
             </LinearLayout>
 
@@ -54,10 +51,10 @@
                     android:id="@+id/chat_all_messenger_img"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
-                    android:layout_marginLeft="80dp"
                     android:layout_gravity="center"
+
                     app:srcCompat="@mipmap/tg_icon"
-                    />
+                     />
 
 
         </LinearLayout>

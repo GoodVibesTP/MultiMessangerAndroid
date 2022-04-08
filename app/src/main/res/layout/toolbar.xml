@@ -15,16 +15,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="1.0">
-
-        <Button
-                android:layout_width="58dp"
-                android:layout_height="match_parent"
-                android:id="@+id/button"
-                app:icon="@android:drawable/ic_menu_sort_by_size"
-                tools:layout_editor_absoluteY="4dp"
-                tools:layout_editor_absoluteX="16dp"
-                android:background="#00FFFFFF" />
-
     </androidx.appcompat.widget.Toolbar>
 
 
