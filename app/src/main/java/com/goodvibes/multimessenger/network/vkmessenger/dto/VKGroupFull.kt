@@ -6,7 +6,17 @@ data class VKGroupFull(
     @SerializedName("id")
     val id: Int,
     @SerializedName("name")
-    val name: String? = null
+    val name: String? = null,
+    @SerializedName("photo_50")
+    val photo50: String? = null,
+    @SerializedName("photo_100")
+    val photo100: String? = null,
+    @SerializedName("photo_200")
+    val photo200: String? = null,
+    @SerializedName("photo_400")
+    val photo400: String? = null,
+    @SerializedName("photo_max_orig")
+    val photoMaxOrig: String? = null,
 //    @SerializedName("screen_name")
 //    val screenName: String? = null,
 //    @SerializedName("fixed_post")
@@ -23,12 +33,6 @@ data class VKGroupFull(
 //    val type: GroupsGroupType? = null,
 //    @SerializedName("deactivated")
 //    val deactivated: String? = null,
-//    @SerializedName("photo_50")
-//    val photo50: String? = null,
-//    @SerializedName("photo_100")
-//    val photo100: String? = null,
-//    @SerializedName("photo_200")
-//    val photo200: String? = null,
 //    @SerializedName("photo_200_orig")
 //    val photo200Orig: String? = null,
 //    @SerializedName("photo_400")

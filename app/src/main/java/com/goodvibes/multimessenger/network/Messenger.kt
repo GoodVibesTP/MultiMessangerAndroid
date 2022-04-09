@@ -7,8 +7,21 @@ import com.goodvibes.multimessenger.datastructure.Messengers
 interface Messenger {
     val messenger: Messengers
 
-    fun getAllChats(count: Int, first_msg: Int = 0, callback: (List<Chat>) -> Unit): List<Chat>
-    fun getMessagesFromChat(chat_id: Int, count: Int, first_msg: Int = 0): List<Message>
-    fun sendMessage(user_id: Int, text: String)
+    fun getAllChats(
+        count: Int,
+        first_msg: Int = 0,
+        callback: (List<Chat>) -> Unit
+    )
+    fun getMessagesFromChat(
+        chat_id: Int,
+        count: Int,
+        first_msg: Int = 0,
+        callback: (List<Message>) -> Unit
+    )
+    fun sendMessage(
+        user_id: Int,
+        text: String,
+        callback: (Int) -> Unit = { }
+    )
     fun authorize()
 }

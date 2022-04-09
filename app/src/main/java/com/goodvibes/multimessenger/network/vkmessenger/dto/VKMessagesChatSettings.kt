@@ -6,7 +6,9 @@ data class VKMessagesChatSettings(
     @SerializedName("owner_id")
     val ownerId: Int,
     @SerializedName("title")
-    val title: String
+    val title: String,
+    @SerializedName("photo")
+    val photo: VKMessagesChatSettingsPhoto? = null
 //    @SerializedName("state")
 //    val state: MessagesChatSettingsState,
 //    @SerializedName("active_ids")
@@ -17,6 +19,4 @@ data class VKMessagesChatSettings(
 //    val friendsCount: Int? = null,
 //    @SerializedName("pinned_message")
 //    val pinnedMessage: MessagesPinnedMessage? = null,
-//    @SerializedName("photo")
-//    val photo: MessagesChatSettingsPhoto? = null
 )

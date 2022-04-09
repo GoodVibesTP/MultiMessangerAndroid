@@ -17,6 +17,24 @@ fun toDefaultChat(
     return Chat(
         chatId = conversationWithMessage.conversation.peer.id,
         img = R.drawable.kotik,
+        imgUri = when(conversationWithMessage.conversation.peer.type) {
+            VKMessagesConversationPeerType.CHAT -> {
+                conversationWithMessage.conversation.chatSettings.photo?.photo200
+            }
+            VKMessagesConversationPeerType.USER -> {
+                val profile = response.profiles?.firstOrNull {
+                    it.id == conversationWithMessage.conversation.peer.id
+                }
+                profile?.photo200
+            }
+            VKMessagesConversationPeerType.GROUP -> {
+                val group = response.groups?.firstOrNull {
+                    it.id == -conversationWithMessage.conversation.peer.id
+                }
+                group?.photo200
+            }
+            else -> null
+        },
         title = when(conversationWithMessage.conversation.peer.type) {
             VKMessagesConversationPeerType.CHAT -> {
                 conversationWithMessage.conversation.chatSettings.title

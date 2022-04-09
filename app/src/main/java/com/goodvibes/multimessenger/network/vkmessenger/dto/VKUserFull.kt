@@ -37,12 +37,12 @@ data class VKUserFull(
     val bdate: String? = null,
     @SerializedName("photo_200")
     val photo200: String? = null,
-    @SerializedName("photo_max")
-    val photoMax: String? = null,
-    @SerializedName("photo_200_orig")
-    val photo200Orig: String? = null,
-    @SerializedName("photo_400_orig")
-    val photo400Orig: String? = null,
+//    @SerializedName("photo_max")
+//    val photoMax: String? = null,
+//    @SerializedName("photo_200_orig")
+//    val photo200Orig: String? = null,
+//    @SerializedName("photo_400_orig")
+//    val photo400Orig: String? = null,
     @SerializedName("photo_max_orig")
     val photoMaxOrig: String? = null,
     @SerializedName("sex")

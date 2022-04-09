@@ -63,7 +63,11 @@ class VK(
         private var longPoolService: VKLongPoolApiService? = null
     }
 
-    override fun getAllChats(count: Int, first_msg: Int, callback: (List<Chat>) -> Unit): List<Chat> {
+    override fun getAllChats(
+        count: Int,
+        first_msg: Int,
+        callback: (List<Chat>) -> Unit
+    ) {
         val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
 
         val callForVKRespond: Call<VKRespond<VKMessagesGetConversationsResponse>>
@@ -99,9 +103,9 @@ class VK(
                             for (item in responseBody.response.items) {
                                 val nextChat = toDefaultChat(item, responseBody.response)
                                 chatArray.add(nextChat)
-                                Log.d(LOG_TAG, nextChat.toString())
+//                                Log.d(LOG_TAG, nextChat.toString())
                             }
-                            callback(chatArray)                                                                             // вызываю callback
+                            callback(chatArray)
                         }
                         responseBody.error != null -> {
                             Log.d(
@@ -128,10 +132,14 @@ class VK(
         })
 
         Log.d(LOG_TAG, "$methodName request: ${callForVKRespond.request()}")
-        return listOf()
     }
 
-    override fun getMessagesFromChat(chat_id: Int, count: Int, first_msg: Int): List<Message> {
+    override fun getMessagesFromChat(
+        chat_id: Int,
+        count: Int,
+        first_msg: Int,
+        callback: (List<Message>) -> Unit
+    ) {
         val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
         val callForVKRespond: Call<VKRespond<VKMessagesGetHistoryResponse>> = messagesService.getHistory(
             access_token = this.token,
@@ -157,9 +165,18 @@ class VK(
                                 LOG_TAG,
                                 "$methodName successful"
                             )
-                            for (message in responseBody.response.items) {
-                                Log.d(LOG_TAG, toDefaultMessage(message).toString())
+//                            for (message in responseBody.response.items) {
+//                                Log.d(LOG_TAG, toDefaultMessage(message).toString())
+//                            }
+                            val messagesArray = arrayListOf<Message>()
+                            messagesArray.ensureCapacity(responseBody.response.count)
+                            for (item in responseBody.response.items) {
+                                val nextMessage = toDefaultMessage(item)
+                                if (nextMessage != null) {
+                                    messagesArray.add(nextMessage)
+                                }
                             }
+                            callback(messagesArray)
                         }
                         responseBody.error != null -> {
                             Log.d(
@@ -186,10 +203,13 @@ class VK(
         })
 
         Log.d(LOG_TAG, "$methodName request: ${callForVKRespond.request()}")
-        return listOf()
     }
 
-    override fun sendMessage(user_id: Int, text: String) {
+    override fun sendMessage(
+        user_id: Int,
+        text: String,
+        callback: (Int) -> Unit
+    ) {
         val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
         val callForVKRespond: Call<VKRespond<Int>> = messagesService.send(
             access_token = this.token,
@@ -214,6 +234,7 @@ class VK(
                                 LOG_TAG,
                                 "$methodName successful"
                             )
+                            callback(responseBody.response)
                         }
                         responseBody.error != null -> {
                             Log.d(
