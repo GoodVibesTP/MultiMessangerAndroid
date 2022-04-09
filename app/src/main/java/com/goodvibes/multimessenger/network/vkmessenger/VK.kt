@@ -103,7 +103,6 @@ class VK(
                             for (item in responseBody.response.items) {
                                 val nextChat = toDefaultChat(item, responseBody.response)
                                 chatArray.add(nextChat)
-//                                Log.d(LOG_TAG, nextChat.toString())
                             }
                             callback(chatArray)
                         }
@@ -165,9 +164,6 @@ class VK(
                                 LOG_TAG,
                                 "$methodName successful"
                             )
-//                            for (message in responseBody.response.items) {
-//                                Log.d(LOG_TAG, toDefaultMessage(message).toString())
-//                            }
                             val messagesArray = arrayListOf<Message>()
                             messagesArray.ensureCapacity(responseBody.response.count)
                             for (item in responseBody.response.items) {
