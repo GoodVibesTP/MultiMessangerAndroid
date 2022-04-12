@@ -1,6 +1,7 @@
 package com.goodvibes.multimessenger
 
 import android.os.Bundle
+import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
@@ -10,9 +11,9 @@ import androidx.appcompat.view.ActionMode
 import androidx.appcompat.widget.Toolbar
 import androidx.drawerlayout.widget.DrawerLayout
 
-
 import com.goodvibes.multimessenger.databinding.ActivityMainBinding
 import com.goodvibes.multimessenger.datastructure.Chat
+import com.goodvibes.multimessenger.datastructure.Event
 import com.goodvibes.multimessenger.network.vkmessenger.VK
 import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +26,8 @@ public class MainActivity : AppCompatActivity() {
     lateinit var toolbar: Toolbar
     var mActionMode: ActionMode? = null
     lateinit var callback: ListChatsActionModeCallback
+
+    lateinit var allChats: MutableList<Chat>
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
@@ -72,7 +75,8 @@ public class MainActivity : AppCompatActivity() {
         //vk.authorize()
         vk.getAllChats(10) { chats ->
             GlobalScope.launch(Dispatchers.Main) {
-                var listChatsAdapter: ListChatsAdapter = ListChatsAdapter(this@MainActivity, chats);
+                allChats = chats
+                var listChatsAdapter: ListChatsAdapter = ListChatsAdapter(this@MainActivity, allChats);
                 activityMainBinding.listChats.setAdapter(listChatsAdapter);
                 activityMainBinding.listChats.setOnItemLongClickListener { parent, view, position, id ->
                     if (mActionMode != null) {
@@ -82,7 +86,33 @@ public class MainActivity : AppCompatActivity() {
                     true
                 }
             }
-        };
+        }
+
+        vk.startUpdateListener { event ->
+            when(event) {
+                is Event.NewMessage -> {
+                    Log.d("VK_LOG", "new incoming message: ${event.message}")
+                    for (i in allChats.indices) {
+                        if (allChats[i].chatId == event.message.chatId) {
+                            allChats[i].lastMessage = event.message
+                            val updatedChat = allChats.removeAt(i)
+                            allChats.add(0, updatedChat)
+                            break
+                        }
+                    }
+
+                    var listChatsAdapter: ListChatsAdapter = ListChatsAdapter(this@MainActivity, allChats);
+                    activityMainBinding.listChats.setAdapter(listChatsAdapter);
+                    activityMainBinding.listChats.setOnItemLongClickListener { parent, view, position, id ->
+                        if (mActionMode != null) {
+                            false
+                        }
+                        mActionMode = startSupportActionMode(callback)!!
+                        true
+                    }
+                }
+            }
+        }
     }
 
 
