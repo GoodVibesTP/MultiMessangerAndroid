@@ -14,11 +14,13 @@ import androidx.drawerlayout.widget.DrawerLayout
 import com.goodvibes.multimessenger.databinding.ActivityMainBinding
 import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.Event
+import com.goodvibes.multimessenger.network.tgmessenger.Telegram
 import com.goodvibes.multimessenger.network.vkmessenger.VK
 import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import org.drinkless.td.libcore.telegram.TdApi
 
 public class MainActivity : AppCompatActivity() {
     lateinit var activityMainBinding : ActivityMainBinding;
@@ -113,6 +115,9 @@ public class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
+        val tg = Telegram(this)
+        tg.client.send(TdApi.GetAuthorizationState(), tg.UpdateHandler())
     }
 
 
