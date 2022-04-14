@@ -12,7 +12,7 @@ import androidx.drawerlayout.widget.DrawerLayout
 
 
 import com.goodvibes.multimessenger.databinding.ActivityMainBinding
-import com.goodvibes.multimessenger.datastructure.Chat
+import com.goodvibes.multimessenger.usecase.MainActivityUC
 import com.goodvibes.multimessenger.network.vkmessenger.VK
 import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.Dispatchers
@@ -23,11 +23,15 @@ public class MainActivity : AppCompatActivity() {
     lateinit var activityMainBinding : ActivityMainBinding;
     lateinit var toggle : ActionBarDrawerToggle
     lateinit var toolbar: Toolbar
+    lateinit var useCase: MainActivityUC
+    lateinit var vk : VK
+
     var mActionMode: ActionMode? = null
     lateinit var callback: ListChatsActionModeCallback
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
+        vk = VK(this)
 
         activityMainBinding = ActivityMainBinding.inflate(layoutInflater);
         setContentView(activityMainBinding.root)
@@ -68,9 +72,8 @@ public class MainActivity : AppCompatActivity() {
 
 
     private fun initChatsAllAdapter() {
-        val vk = VK(this);
         //vk.authorize()
-        vk.getAllChats(10) { chats ->
+        useCase.getAllChats(10, 0) { chats ->
             GlobalScope.launch(Dispatchers.Main) {
                 var listChatsAdapter: ListChatsAdapter = ListChatsAdapter(this@MainActivity, chats);
                 activityMainBinding.listChats.setAdapter(listChatsAdapter);
