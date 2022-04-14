@@ -10,7 +10,7 @@ class MainActivityUC(_mainActivity: MainActivity, _vkMessenger: VK) {
     fun getAllChats(
         count: Int,
         first_msg: Int,
-        callback: (List<Chat>) -> Unit
+        callback: (MutableList<Chat>) -> Unit
     ) {
        vk.getAllChats(count, callback = callback)
     }

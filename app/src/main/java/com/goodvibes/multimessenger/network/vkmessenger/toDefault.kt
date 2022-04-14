@@ -79,6 +79,7 @@ fun toDefaultMessage(
         }
     }
     return Message(
+        id = message.id,
         chatId = message.peerId,
         userId = message.fromId,
         text = message.text,

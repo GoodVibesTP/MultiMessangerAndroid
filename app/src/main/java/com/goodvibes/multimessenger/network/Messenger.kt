@@ -10,13 +10,13 @@ interface Messenger {
     fun getAllChats(
         count: Int,
         first_msg: Int = 0,
-        callback: (List<Chat>) -> Unit
+        callback: (MutableList<Chat>) -> Unit
     )
     fun getMessagesFromChat(
         chat_id: Int,
         count: Int,
         first_msg: Int = 0,
-        callback: (List<Message>) -> Unit
+        callback: (MutableList<Message>) -> Unit
     )
     fun sendMessage(
         user_id: Int,
