@@ -41,10 +41,10 @@ public class MainActivity : AppCompatActivity() {
         activityMainBinding = ActivityMainBinding.inflate(layoutInflater);
         setContentView(activityMainBinding.root)
 
-//        if (true) {
-//            val intent = Intent(this, AuthorizationActivity::class.java)
-//            startActivity(intent)
-//        }
+       if (!useCase.isLogin()) {
+           val intent = Intent(this, AuthorizationActivity::class.java)
+           startActivity(intent)
+       }
 
         initMenu()
         initChatsAllAdapter()

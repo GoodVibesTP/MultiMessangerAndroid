@@ -29,7 +29,7 @@ class VK(
 
     override val messenger = Messengers.VK
     private val vkClient = OriginalVKClient
-    private var token = ""
+    private var token = "e8871289964a6c58a3ef82f44384a79750f860b9e5625ae0070d241ae7c78d1b6bed62d8e4458cb2305ce"
 
     private val permissions = arrayListOf<VKScope>()
 

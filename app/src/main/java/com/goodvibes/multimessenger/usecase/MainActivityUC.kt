@@ -15,5 +15,7 @@ class MainActivityUC(_mainActivity: MainActivity, _vkMessenger: VK) {
        vk.getAllChats(count, callback = callback)
     }
 
-
+    fun isLogin(): Boolean {
+        return false;
+    }
 }
