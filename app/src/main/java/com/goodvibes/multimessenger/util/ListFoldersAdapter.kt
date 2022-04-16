@@ -12,6 +12,7 @@ import com.goodvibes.multimessenger.datastructure.Folder
 import com.goodvibes.multimessenger.datastructure.Messengers
 
 class ListFoldersAdapter: ArrayAdapter<Folder> {
+
     public constructor(ctx: Context, chats: MutableList<Folder>) :
             super(ctx, R.layout.list_item_folders, chats){
             }

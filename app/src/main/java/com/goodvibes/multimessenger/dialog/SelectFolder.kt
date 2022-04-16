@@ -6,12 +6,18 @@ import android.widget.ListView
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
 import com.goodvibes.multimessenger.R
+import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.Folder
 import com.goodvibes.multimessenger.util.ListFoldersAdapter
 
-class SelectFolder(_folders: MutableList<Folder>, _listFoldersAdapter: ListFoldersAdapter) : DialogFragment() {
+class SelectFolder(
+    _folders: MutableList<Folder>, _listFoldersAdapter: ListFoldersAdapter, chat: Chat,
+    _callbackAfterClickFolder: (chat: Chat) ->Unit
+) : DialogFragment() {
     private val listFoldersAdapter  = _listFoldersAdapter
     val folders = _folders
+    private val callbackAfterClickFolder = _callbackAfterClickFolder
+    private val currentChatSelected = chat
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
         return activity?.let {
@@ -24,8 +30,13 @@ class SelectFolder(_folders: MutableList<Folder>, _listFoldersAdapter: ListFolde
             listView.choiceMode = ListView.CHOICE_MODE_SINGLE
             listFoldersAdapter.notifyDataSetChanged()
 
-            builder.setView(rowList)
+            listView.setOnItemClickListener { adapterView, view, position, id->
+                val folder = listFoldersAdapter.getItem(position)
+                currentChatSelected.folder = folder!!
+                callbackAfterClickFolder(currentChatSelected)
+            }
 
+            builder.setView(rowList)
             builder.create()
         } ?: throw IllegalStateException("Activity cannot be null")
     }

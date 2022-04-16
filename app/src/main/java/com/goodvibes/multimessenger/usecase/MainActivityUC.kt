@@ -14,7 +14,7 @@ class MainActivityUC(_mainActivity: MainActivity, _vkMessenger: VK) {
         first_msg: Int,
         callback: (MutableList<Chat>) -> Unit
     ) {
-       vk.getAllChats(count, callback = callback)
+       vk.getAllChats(count, first_msg, callback = callback)
     }
 
     fun isLogin(): Boolean {
@@ -22,15 +22,15 @@ class MainActivityUC(_mainActivity: MainActivity, _vkMessenger: VK) {
     }
 
     fun getAllFolders(): MutableList<Folder> {
-        val resultFromBD = arrayOf<Folder>(Folder(1, 1," folder1"),
-                                    Folder(2, 2," folder2"),
-                                    Folder(3, 3," folder3"))
+        val resultFromBD = arrayOf<Folder>(Folder(1, " folder1"),
+                                    Folder(2, " folder2"),
+                                    Folder(3, " folder3"))
 
         //ну вот так, а что я могу поделать
         //TODO: надо подумать что будет если пользователь авторизован в вк или тг а в другом месте нет
-        val result = mutableListOf<Folder>(Folder(-1,-1,"Create new folder"),
-                                            Folder(-2,-2,"Telegram"),
-                                            Folder(-3,-3,"VK"))
+        val result = mutableListOf<Folder>(Folder(-1,"Create new folder"),
+                                            Folder(-2,"Telegram"),
+                                            Folder(-3,"VK"))
         result.addAll(resultFromBD)
         return result
     }
