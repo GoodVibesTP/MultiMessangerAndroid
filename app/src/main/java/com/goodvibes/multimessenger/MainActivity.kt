@@ -1,5 +1,6 @@
 package com.goodvibes.multimessenger
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -31,6 +32,11 @@ public class MainActivity : AppCompatActivity() {
 
         activityMainBinding = ActivityMainBinding.inflate(layoutInflater);
         setContentView(activityMainBinding.root)
+
+//        if (true) {
+//            val intent = Intent(this, AuthorizationActivity::class.java)
+//            startActivity(intent)
+//        }
 
         initMenu()
         initChatsAllAdapter()
