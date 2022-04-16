@@ -2,13 +2,14 @@ package com.goodvibes.multimessenger.network.vkmessenger
 
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.PackageManagerCompat.LOG_TAG
 import com.goodvibes.multimessenger.datastructure.Chat
+import com.goodvibes.multimessenger.datastructure.Event
 import com.goodvibes.multimessenger.datastructure.Message
 import com.goodvibes.multimessenger.datastructure.Messengers
 import com.goodvibes.multimessenger.network.Messenger
 import com.goodvibes.multimessenger.network.vkmessenger.dto.*
 import com.google.gson.JsonElement
+import com.google.gson.JsonObject
 import com.vk.api.sdk.VK as OriginalVKClient
 import com.vk.api.sdk.VKTokenExpiredHandler
 import com.vk.api.sdk.auth.VKAuthenticationResult
@@ -18,6 +19,7 @@ import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import kotlin.math.roundToInt
 
 
 class VK(
@@ -27,7 +29,7 @@ class VK(
 
     override val messenger = Messengers.VK
     private val vkClient = OriginalVKClient
-    private var token = ""
+    private var token = "77edd04273011439e0510f5ab5e28867e99f7bd768488c70be185aa19988728cdf77629cc93e1089f7312"
 
     private val permissions = arrayListOf<VKScope>()
 
@@ -59,14 +61,12 @@ class VK(
 
         private val messagesService = retrofit.create(VKMessagesApiService::class.java)
         private val usersService = retrofit.create(VKUsersApiService::class.java)
-
-        private var longPoolService: VKLongPoolApiService? = null
     }
 
     override fun getAllChats(
         count: Int,
         first_msg: Int,
-        callback: (List<Chat>) -> Unit
+        callback: (MutableList<Chat>) -> Unit
     ) {
         val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
 
@@ -137,7 +137,7 @@ class VK(
         chat_id: Int,
         count: Int,
         first_msg: Int,
-        callback: (List<Message>) -> Unit
+        callback: (MutableList<Message>) -> Unit
     ) {
         val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
         val callForVKRespond: Call<VKRespond<VKMessagesGetHistoryResponse>> = messagesService.getHistory(
@@ -259,7 +259,7 @@ class VK(
         Log.d(LOG_TAG, "$methodName request: ${callForVKRespond.request()}")
     }
 
-    fun startUpdateListener() {
+    fun startUpdateListener(callback: (Event) -> Unit) {
         val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
         val callForVKRespond: Call<VKRespond<VKMessagesGetLongPoolServerResponse>> =
             messagesService.getLongPollServer(
@@ -287,24 +287,20 @@ class VK(
                             )
 
                             val serverUrl = responseBody.response.server.split("/")
-                            longPoolService = Retrofit.Builder()
+
+                            val longPoolService = Retrofit.Builder()
                                 .baseUrl("https://${serverUrl[0]}/")
                                 .addConverterFactory(GsonConverterFactory.create())
                                 .build()
                                 .create(VKLongPoolApiService::class.java)
 
-                            val callForUpdates: Call<JsonElement> = longPoolService!!.getUpdates(
+                            listenForEvents(
+                                longPoolApiService = longPoolService,
                                 server = serverUrl[1],
                                 key = responseBody.response.key,
                                 ts = responseBody.response.ts,
-                                wait = 1,
-                                mode = 2,
-                                version = 3
+                                callback = callback
                             )
-
-                            callForUpdates.enqueue(longPoolResponse)
-                            Log.d(LOG_TAG, "$methodName request: ${callForUpdates.request()}")
-
                         }
                         responseBody.error != null -> {
                             Log.d(
@@ -391,38 +387,104 @@ class VK(
     override fun authorize() {
         authLauncher.launch(permissions)
     }
-}
 
-object longPoolResponse : Callback<JsonElement> {
-    private const val methodName = "longPoolResponse"
-    override fun onResponse(
-        call: Call<JsonElement>,
-        response: Response<JsonElement>
+    private fun listenForEvents(
+        longPoolApiService: VKLongPoolApiService,
+        server: String,
+        key: String,
+        ts: Int,
+        callback: (Event) -> Unit
     ) {
-        val LOG_TAG = "VK_LOG"
+        val methodName = "listenForEvents"
+        val callForUpdates: Call<VKGetUpdates> = longPoolApiService.getUpdates(
+            server = server,
+            key = key,
+            ts = ts,
+            wait = 5,
+            mode = 2,
+            version = 3
+        )
 
-        Log.d(LOG_TAG, "$methodName response code: ${response.code()}")
-        if (response.isSuccessful) {
-            val responseBody = response.body()
-            when {
-                responseBody == null -> {
-                    Log.d(LOG_TAG, "$methodName successful, but response.body() is null")
-                }
-                else -> {
-                    Log.d(
-                        LOG_TAG,
-                        responseBody.asString
+        val listenForEventsCallback = object : Callback<VKGetUpdates> {
+            override fun onResponse(
+                call: Call<VKGetUpdates>,
+                response: Response<VKGetUpdates>
+            ) {
+                Log.d(LOG_TAG, "$methodName response code: ${response.code()}")
+                if (response.isSuccessful) {
+                    val responseBody = response.body()
+                    if (responseBody == null) {
+                            Log.d(LOG_TAG, "$methodName successful, but response.body() is null")
+                    }
+                    else {
+                        Log.d(
+                            LOG_TAG,
+                            "ts: ${responseBody.ts}"
+                        )
+                        for (updateItem in responseBody.updates) {
+                            val event: Event? = when(updateItem[0].asInt) {
+                                VK_UPDATE.EVENTS.NEW_MESSAGE -> {
+                                    if (updateItem.size > VK_UPDATE.NEW_NESSAGE.ADDITIONAL_FIELD) {
+                                        val ADDITIONAL_FIELD = VK_UPDATE.NEW_NESSAGE.ADDITIONAL_FIELD
+                                        if (updateItem[ADDITIONAL_FIELD].isJsonObject) {
+                                            updateItem[ADDITIONAL_FIELD].asJsonObject.get("fwd")?.asString
+                                        }
+                                        else {
+                                            Log.d(LOG_TAG, "$methodName field $ADDITIONAL_FIELD exists, " +
+                                                    "but isJsonObject = false")
+                                        }
+                                    }
+                                    Event.NewMessage(
+                                        message = Message(
+                                            id = updateItem[VK_UPDATE.NEW_NESSAGE.MESSAGE_ID].asInt,
+                                            chatId = updateItem[VK_UPDATE.NEW_NESSAGE.MINOR_ID].asInt,
+                                            userId = updateItem[VK_UPDATE.NEW_NESSAGE.MINOR_ID].asInt,
+                                            text = updateItem[VK_UPDATE.NEW_NESSAGE.TEXT].asString,
+                                            fwdMessages = null,
+                                            replyTo = null,
+                                            messenger = Messengers.VK
+                                        ),
+                                        direction = if (updateItem[VK_UPDATE.NEW_NESSAGE.FLAGS].asInt and 2 == 0) {
+                                            Event.NewMessage.Direction.INGOING
+                                        }
+                                        else {
+                                            Event.NewMessage.Direction.OUTGOING
+                                        }
+                                    )
+                                }
+                                else -> {
+                                    Log.d(
+                                        LOG_TAG,
+                                        "update_code: ${updateItem[0].asInt}"
+                                    )
+                                    null
+                                }
+                            }
+
+                            if (event != null) {
+                                callback(event)
+                            }
+                        }
+                    }
+                    listenForEvents(
+                        longPoolApiService = longPoolApiService,
+                        server = server,
+                        key = key,
+                        ts = responseBody?.ts ?: ts,
+                        callback = callback
                     )
                 }
             }
-        }
-    }
 
-    override fun onFailure(
-        call: Call<JsonElement>,
-        t: Throwable
-    ) {
-        val LOG_TAG = "VK_LOG"
-        Log.d(LOG_TAG, "$methodName failure: $t")
+            override fun onFailure(
+                call: Call<VKGetUpdates>,
+                t: Throwable
+            ) {
+                Log.d(LOG_TAG, "$methodName failure: $t")
+            }
+        }
+
+        callForUpdates.enqueue(listenForEventsCallback)
+        Log.d(LOG_TAG, "$methodName request: ${callForUpdates.request()}")
     }
 }

@@ -1,6 +1,7 @@
 package com.goodvibes.multimessenger.network.vkmessenger.dto
 
 import com.google.gson.JsonElement
+import com.google.gson.JsonObject
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Path
@@ -15,5 +16,5 @@ interface VKLongPoolApiService {
         @Query("wait") wait: Int,
         @Query("mode") mode: Int,
         @Query("version") version: Int
-    ): Call<JsonElement>
+    ): Call<VKGetUpdates>
 }

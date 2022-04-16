@@ -1,6 +1,7 @@
 package com.goodvibes.multimessenger.datastructure
 
 data class Message(
+    var id: Int,
     var chatId: Int,
     var userId: Int,
     var text: String,

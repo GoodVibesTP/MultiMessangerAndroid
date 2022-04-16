@@ -28,7 +28,7 @@ class ListChatsAdapter: ArrayAdapter<Chat> {
         val textViewLastMessage: TextView = convertView_!!.findViewById(R.id.last_message);
         imageViewAva.setImageResource(chat!!.img);
         if (chat!!.messenger == Messengers.VK) {
-            imageViewMessenger.setImageResource(R.mipmap.tg_icon);
+            imageViewMessenger.setImageResource(R.drawable.vk);
         } else {
             imageViewMessenger.setImageResource(R.mipmap.tg_icon)
         }
