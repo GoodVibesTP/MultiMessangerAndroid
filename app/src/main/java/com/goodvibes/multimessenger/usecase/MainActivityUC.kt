@@ -5,22 +5,45 @@ import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.Folder
 import com.goodvibes.multimessenger.datastructure.idTGFolder
 import com.goodvibes.multimessenger.datastructure.idVKFolder
+import com.goodvibes.multimessenger.network.Messenger
+import com.goodvibes.multimessenger.network.tgmessenger.Telegram
 import com.goodvibes.multimessenger.network.vkmessenger.VK
 
-class MainActivityUC(_mainActivity: MainActivity, _vkMessenger: VK) {
+class MainActivityUC(_mainActivity: MainActivity, _vkMessenger: VK, _tgMessenger: Telegram) {
     private val mainActivity = _mainActivity
     private val vk = _vkMessenger
+    private val tg = _tgMessenger
 
     fun getAllChats(
         count: Int,
         first_msg: Int,
         callback: (MutableList<Chat>) -> Unit
     ) {
-       vk.getAllChats(count, first_msg, callback = callback)
+        vk.getAllChats(count, first_msg, callback = callback)
+        tg.getAllChats(count, first_msg, callback = callback)
+    }
+
+    fun getAllChats(
+        count: Int,
+        first_msg: Int,
+        messenger: Messenger,
+        callback: (MutableList<Chat>) -> Unit
+    ) {
+        messenger.getAllChats(count, first_msg, callback = callback)
     }
 
     fun isLogin(): Boolean {
-        return true;
+        if (vk.isAuthorized()) {
+            return true
+        }
+        else if (tg.isAuthorized()){
+            return true
+        }
+        return false
+    }
+
+    fun isLogin(messenger: Messenger): Boolean {
+        return messenger.isAuthorized()
     }
 
     fun getAllFolders(): MutableList<Folder> {

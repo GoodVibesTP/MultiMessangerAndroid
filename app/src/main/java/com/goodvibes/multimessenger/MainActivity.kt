@@ -36,6 +36,7 @@ public class MainActivity : AppCompatActivity() {
     lateinit var toolbar: Toolbar
     lateinit var useCase: MainActivityUC
     lateinit var vk : VK
+    lateinit var tg: Telegram
     lateinit var listChatsAdapter: ListChatsAdapter
 
     private var numberLastChatVK: Int = 0
@@ -50,7 +51,8 @@ public class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
         vk = VK(this)
-        useCase = MainActivityUC(this, vk)
+        tg = Telegram(this)
+        useCase = MainActivityUC(this, vk, tg)
         activityMainBinding = ActivityMainBinding.inflate(layoutInflater);
         setContentView(activityMainBinding.root)
 
@@ -96,10 +98,11 @@ public class MainActivity : AppCompatActivity() {
 //TODO: ТУТ ОПРЕДЕЛЕННО НУЖНО ВЫНЕСТИ В ФУНКЦИЮ ИНИН КАЛЛБЭКА
     @RequiresApi(Build.VERSION_CODES.M)
     private fun initChatsAllAdapter() {
+    allChats = mutableListOf()
         useCase.getAllChats(10, 0) { chats ->
             GlobalScope.launch(Dispatchers.Main) {
                 numberLastChatVK = numberChatOnPage
-                allChats = chats
+                allChats.addAll(chats)
                 listChatsAdapter = ListChatsAdapter(this@MainActivity, allChats);
                 activityMainBinding.listChats.setAdapter(listChatsAdapter);
                 activityMainBinding.listChats.setOnItemLongClickListener { parent, view, position, id ->
@@ -279,9 +282,9 @@ public class MainActivity : AppCompatActivity() {
 
         override fun onScroll(view: AbsListView?, firstVisibleItem: Int,
                               visibleItemCount: Int, totalItemCount: Int) {
-            if (!isLoadingChatVK &&  (firstVisibleItem +  visibleItemCount == totalItemCount)) {
+            if (!isLoadingChatVK &&  (firstVisibleItem + visibleItemCount == totalItemCount)) {
                 isLoadingChatVK = true
-                useCase.getAllChats(10, numberLastChatVK) {chats ->
+                useCase.getAllChats(10, numberLastChatVK, vk) {chats ->
                     numberLastChatVK += numberChatOnPage
                     isLoadingChatVK = false
                     listChatsAdapter.addAll(chats)
