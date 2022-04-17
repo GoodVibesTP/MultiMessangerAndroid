@@ -135,9 +135,15 @@ public class MainActivity : AppCompatActivity() {
     private fun deleteChat(chat: Chat) {
         useCase.deleteChat(chat)
     }
+
     private fun moveChatToFolder(chat: Chat) : Unit {
-        Toast.makeText(this, chat.title + " to folder " + chat.folder.name, Toast.LENGTH_LONG).show()
+        useCase.moveChatToFolder(chat)
     }
+
+    private fun addFolderAndMoveChat(chat: Chat) {
+        useCase.addFolder(chat)
+    }
+
     inner class ListChatsActionModeCallback : ActionMode.Callback {
         var mClickedViewPosition: Int? = null
 
@@ -169,7 +175,7 @@ public class MainActivity : AppCompatActivity() {
 
                     val foldersAdapter = ListFoldersAdapter(this@MainActivity, allFolders)
                     val chat = this@MainActivity.listChatsAdapter.getItem(this.mClickedViewPosition!!)
-                    val dialog = SelectFolder(allFolders, foldersAdapter, chat!!, ::moveChatToFolder)
+                    val dialog = SelectFolder(allFolders, foldersAdapter, chat!!, ::moveChatToFolder, ::addFolderAndMoveChat)
                     val manager = supportFragmentManager
                     dialog.show(manager, "Select folder")
                     return true

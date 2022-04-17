@@ -3,6 +3,8 @@ import android.widget.Toast
 import com.goodvibes.multimessenger.MainActivity
 import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.Folder
+import com.goodvibes.multimessenger.datastructure.idTGFolder
+import com.goodvibes.multimessenger.datastructure.idVKFolder
 import com.goodvibes.multimessenger.network.vkmessenger.VK
 
 class MainActivityUC(_mainActivity: MainActivity, _vkMessenger: VK) {
@@ -28,14 +30,22 @@ class MainActivityUC(_mainActivity: MainActivity, _vkMessenger: VK) {
 
         //ну вот так, а что я могу поделать
         //TODO: надо подумать что будет если пользователь авторизован в вк или тг а в другом месте нет
-        val result = mutableListOf<Folder>(Folder(-1,"Create new folder"),
-                                            Folder(-2,"Telegram"),
-                                            Folder(-3,"VK"))
+        val result = mutableListOf<Folder>(
+                                            Folder(idTGFolder,"Telegram"),
+                                            Folder(idVKFolder,"VK"))
         result.addAll(resultFromBD)
         return result
     }
 
     fun deleteChat(chat: Chat) {
         Toast.makeText(mainActivity, "Chat for delete " + chat.title, Toast.LENGTH_SHORT).show()
+    }
+
+    fun addFolder(chat: Chat) {
+        Toast.makeText(mainActivity, "Create folder " + chat.folder.name + " for chat " + chat.title, Toast.LENGTH_LONG).show()
+    }
+
+    fun moveChatToFolder(chat: Chat) {
+        Toast.makeText(mainActivity, chat.title + " to folder " + chat.folder.name, Toast.LENGTH_LONG).show()
     }
 }
