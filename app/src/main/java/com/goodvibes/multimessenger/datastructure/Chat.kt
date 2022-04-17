@@ -8,5 +8,6 @@ data class Chat(
     var lastMessage: Message?,
     var chatType: ChatType,
     var messenger: Messengers,
+    var folder: Folder = Folder(-100,"empty",),
 )
 

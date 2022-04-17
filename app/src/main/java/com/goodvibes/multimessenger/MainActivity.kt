@@ -1,26 +1,32 @@
 package com.goodvibes.multimessenger
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.AbsListView
+import android.widget.AbsListView.OnScrollListener
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.view.ActionMode
 import androidx.appcompat.widget.Toolbar
 import androidx.drawerlayout.widget.DrawerLayout
-
 import com.goodvibes.multimessenger.databinding.ActivityMainBinding
-import com.goodvibes.multimessenger.usecase.MainActivityUC
 import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.Event
+import com.goodvibes.multimessenger.dialog.SelectFolder
 import com.goodvibes.multimessenger.network.vkmessenger.VK
+import com.goodvibes.multimessenger.usecase.MainActivityUC
+import com.goodvibes.multimessenger.util.ListFoldersAdapter
 import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+
 
 public class MainActivity : AppCompatActivity() {
     lateinit var activityMainBinding : ActivityMainBinding;
@@ -28,6 +34,11 @@ public class MainActivity : AppCompatActivity() {
     lateinit var toolbar: Toolbar
     lateinit var useCase: MainActivityUC
     lateinit var vk : VK
+    lateinit var listChatsAdapter: ListChatsAdapter
+
+    private var numberLastChatVK: Int = 0
+    private var isLoadingChatVK: Boolean = false
+    private var numberChatOnPage: Int = 20
 
     var mActionMode: ActionMode? = null
     lateinit var callback: ListChatsActionModeCallback
@@ -80,21 +91,39 @@ public class MainActivity : AppCompatActivity() {
         }
     }
 
-
+//TODO: ТУТ ОПРЕДЕЛЕННО НУЖНО ВЫНЕСТИ В ФУНКЦИЮ ИНИН КАЛЛБЭКА
+    @RequiresApi(Build.VERSION_CODES.M)
     private fun initChatsAllAdapter() {
-        //vk.authorize()
         useCase.getAllChats(10, 0) { chats ->
             GlobalScope.launch(Dispatchers.Main) {
+                numberLastChatVK = numberChatOnPage
                 allChats = chats
-                var listChatsAdapter: ListChatsAdapter = ListChatsAdapter(this@MainActivity, allChats);
+                listChatsAdapter = ListChatsAdapter(this@MainActivity, allChats);
                 activityMainBinding.listChats.setAdapter(listChatsAdapter);
                 activityMainBinding.listChats.setOnItemLongClickListener { parent, view, position, id ->
                     if (mActionMode != null) {
                         false
                     }
-                    mActionMode = startSupportActionMode(callback)!!
+                    view.isSelected = true
+                    callback.setClickedView(position)
+                    mActionMode = startActionMode(callback)!!
                     true
                 }
+//                activityMainBinding.listChats.setOnScrollChangeListener { view, scrollX, scrollY, oldScrollX, oldScrollY ->
+//                    if (!isLoadingChatVK) {
+//                        if (scrollY > numberLastChatVK) {
+//                            isLoadingChatVK = true
+//                            useCase.getAllChats(10, numberLastChatVK) {chats ->
+//                                numberLastChatVK = scrollY
+//                                isLoadingChatVK = false
+//                                listChatsAdapter.addAll(chats)
+//                            }
+//                        }
+//                        Log.d("ScrollView","scrollX_"+scrollX+"_scrollY_"+scrollY+"_oldScrollX_"+oldScrollX+"_oldScrollY_"+oldScrollY);
+//                    }
+//                }
+                activityMainBinding.listChats.setOnScrollListener(OnScrollListenerChats())
+
             }
         }
 
@@ -117,7 +146,10 @@ public class MainActivity : AppCompatActivity() {
                         if (mActionMode != null) {
                             false
                         }
-                        mActionMode = startSupportActionMode(callback)!!
+                        view.isSelected = true
+                        callback.setClickedView(position)
+                        mActionMode = startActionMode(callback)!!
+
                         true
                     }
                 }
@@ -126,10 +158,29 @@ public class MainActivity : AppCompatActivity() {
     }
 
 
+    private fun deleteChat(chat: Chat) {
+        useCase.deleteChat(chat)
+    }
+
+    private fun moveChatToFolder(chat: Chat) : Unit {
+        useCase.moveChatToFolder(chat)
+    }
+
+    private fun addFolderAndMoveChat(chat: Chat) {
+        useCase.addFolder(chat)
+    }
+
     inner class ListChatsActionModeCallback : ActionMode.Callback {
+        var mClickedViewPosition: Int? = null
+
+        fun setClickedView(view: Int?) {
+            mClickedViewPosition = view
+        }
+
         override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
             mode?.menuInflater?.inflate(R.menu.select_chat_menu, menu)
             mode?.setTitle("choose your option")
+
             return true
         }
 
@@ -140,7 +191,19 @@ public class MainActivity : AppCompatActivity() {
         override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
             when (item?.itemId) {
                 R.id.select_chat_menu_delete -> {
+                    val chat = this@MainActivity.listChatsAdapter.getItem(this.mClickedViewPosition!!)
+                    deleteChat(chat!!)
                     mode?.finish()
+                    return true
+                }
+                R.id.select_chat_mov_to_folder -> {
+                    val allFolders = useCase.getAllFolders()
+
+                    val foldersAdapter = ListFoldersAdapter(this@MainActivity, allFolders)
+                    val chat = this@MainActivity.listChatsAdapter.getItem(this.mClickedViewPosition!!)
+                    val dialog = SelectFolder(allFolders, foldersAdapter, chat!!, ::moveChatToFolder, ::addFolderAndMoveChat)
+                    val manager = supportFragmentManager
+                    dialog.show(manager, "Select folder")
                     return true
                 }
             }
@@ -152,6 +215,24 @@ public class MainActivity : AppCompatActivity() {
         }
     }
 
+    inner class OnScrollListenerChats : OnScrollListener {
+        override fun onScrollStateChanged(recyclerView: AbsListView?, newState: Int) {
+        }
+
+        override fun onScroll(view: AbsListView?, firstVisibleItem: Int,
+                              visibleItemCount: Int, totalItemCount: Int) {
+            if (!isLoadingChatVK &&  (firstVisibleItem +  visibleItemCount == totalItemCount)) {
+                isLoadingChatVK = true
+                useCase.getAllChats(10, numberLastChatVK) {chats ->
+                    numberLastChatVK += numberChatOnPage
+                    isLoadingChatVK = false
+                    listChatsAdapter.addAll(chats)
+                }
+
+            }
+        }
+
+    }
 }
 
 
