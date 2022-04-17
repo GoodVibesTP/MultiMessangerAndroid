@@ -18,6 +18,8 @@ import androidx.drawerlayout.widget.DrawerLayout
 import com.goodvibes.multimessenger.databinding.ActivityMainBinding
 import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.Event
+import com.goodvibes.multimessenger.datastructure.Folder
+import com.goodvibes.multimessenger.datastructure.idAllFolder
 import com.goodvibes.multimessenger.dialog.SelectFolder
 import com.goodvibes.multimessenger.network.tgmessenger.Telegram
 import com.goodvibes.multimessenger.network.vkmessenger.VK
@@ -38,9 +40,11 @@ public class MainActivity : AppCompatActivity() {
     lateinit var vk : VK
     lateinit var listChatsAdapter: ListChatsAdapter
 
+
     private var numberLastChatVK: Int = 0
     private var isLoadingChatVK: Boolean = false
     private var numberChatOnPage: Int = 20
+    private var currentFolder: Folder = Folder(idAllFolder, "AllChats")
 
     var mActionMode: ActionMode? = null
     lateinit var callback: ListChatsActionModeCallback
@@ -218,6 +222,13 @@ public class MainActivity : AppCompatActivity() {
                 useCase.getAllChats(10, numberLastChatVK) {chats ->
                     numberLastChatVK += numberChatOnPage
                     isLoadingChatVK = false
+//                    val listFilter: MutableList<Chat>
+//                    for (item: chats) {
+//                        if (useCase.isChatInFolder(item, currentFolder)) {
+//                            listFilter.addlast(item);
+//                        }
+//                    }
+
                     listChatsAdapter.addAll(chats)
                 }
 

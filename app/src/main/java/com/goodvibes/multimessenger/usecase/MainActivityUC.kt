@@ -48,4 +48,8 @@ class MainActivityUC(_mainActivity: MainActivity, _vkMessenger: VK) {
     fun moveChatToFolder(chat: Chat) {
         Toast.makeText(mainActivity, chat.title + " to folder " + chat.folder.name, Toast.LENGTH_LONG).show()
     }
+
+    fun isChatInFolder(chat: Chat, folder: Folder) : Boolean {
+        return true
+    }
 }
