@@ -6,7 +6,6 @@ import com.goodvibes.multimessenger.R
 import com.goodvibes.multimessenger.datastructure.*
 import com.goodvibes.multimessenger.network.Messenger
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.drinkless.td.libcore.telegram.Client
 import org.drinkless.td.libcore.telegram.TdApi
@@ -137,31 +136,30 @@ object Telegram : Messenger {
         first_msg: Int,
         callback: (MutableList<Message>) -> Unit
     ) {
-        GlobalScope.launch {
-            delay(10000)
-            Log.d(LOG_TAG, "getMessagesFromChat")
-            client.send(
-                TdApi.GetChatHistory(
-                    chat_id,
-                    10,
-                    0,
-                    100,
-                    false
-                ),
-                CallbackHandler(callback)
-            )
-            delay(10000)
-            client.send(
-                TdApi.GetChatHistory(
-                    chat_id,
-                    10,
-                    0,
-                    100,
-                    true
-                ),
-                CallbackHandler(callback)
-            )
+        while (!haveAuthorization) {
         }
+        Log.d("MM_LOG", "getMessagesFromChat")
+        client.send(
+            TdApi.GetChatHistory(
+                chat_id,
+                0,
+                0,
+                100,
+                false
+            ),
+            CallbackHandler<MutableList<Message>> {
+                client.send(
+                    TdApi.GetChatHistory(
+                        chat_id,
+                        0,
+                        0,
+                        100,
+                        true
+                    ),
+                    CallbackHandler(callback)
+                )
+            }
+        )
     }
 
     override fun sendMessage(
@@ -169,7 +167,21 @@ object Telegram : Messenger {
         text: String,
         callback: (Long) -> Unit
     ) {
-        TODO("Not yet implemented")
+        client.send(
+            TdApi.SendMessage(
+                user_id,
+                0,
+                0,
+                null,
+                null,
+                TdApi.InputMessageText(
+                    TdApi.FormattedText(text, null),
+                    false,
+                    false
+                )
+            ),
+            CallbackHandler(callback)
+        )
     }
 
     override fun getChatById(
@@ -177,7 +189,8 @@ object Telegram : Messenger {
         callback: (Chat) -> Unit
     ) {
         GlobalScope.launch {
-            delay(2000)
+            while (!haveAuthorization) {
+            }
             Log.d(LOG_TAG, "getChatById, ${chats[chat_id]}")
             Log.d(LOG_TAG, chats.toString())
             if (chats[chat_id] != null) {
@@ -341,6 +354,7 @@ object Telegram : Messenger {
                     callback(chatArray as T)
                 }
                 TdApi.Messages.CONSTRUCTOR -> {
+                    Log.d("MM_LOG", tdObject.toString())
                     val messages = (tdObject as TdApi.Messages).messages
                     val messageArray = arrayListOf<Message>()
                     messageArray.ensureCapacity(messages.size)
@@ -352,6 +366,16 @@ object Telegram : Messenger {
             }
         }
     }
+
+    class SendMessageResultHandler(
+        val callback: (Message) -> Unit
+    ) : Client.ResultHandler {
+        override fun onResult(tdObject: TdApi.Object) {
+            val sentMessage = (tdObject as TdApi.Message)
+            callback(toDefaultMessage(sentMessage))
+        }
+    }
+
     class UpdateHandler : Client.ResultHandler {
         override fun onResult(tdObject: TdApi.Object) {
             when (tdObject.constructor) {

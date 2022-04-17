@@ -2,12 +2,9 @@ package com.goodvibes.multimessenger
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.widget.Button
-import android.widget.Toast
 import com.goodvibes.multimessenger.fragment.AuthorizationTGInputNumber
 import com.goodvibes.multimessenger.network.tgmessenger.Telegram
 import com.goodvibes.multimessenger.network.vkmessenger.VK
-import com.goodvibes.multimessenger.usecase.AuthorizationActivityUC
 import com.goodvibes.multimessenger.usecase.AuthorizationTGActivityUC
 
 class AuthorizationTGActivity : AppCompatActivity() {

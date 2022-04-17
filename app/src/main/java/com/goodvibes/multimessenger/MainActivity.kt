@@ -3,6 +3,7 @@ package com.goodvibes.multimessenger
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
@@ -61,6 +62,16 @@ class MainActivity : AppCompatActivity() {
         initChatsAllAdapter()
 
         callback = ListChatsActionModeCallback()
+
+        tg.getMessagesFromChat(197730632, 100, 0) { messages ->
+            for (message in messages) {
+                Log.d("MM_LOG", message.toString())
+            }
+        }
+
+        tg.sendMessage(197730632, "newMessage") { message ->
+            Log.d("MM_LOG", "new Message: $message")
+        }
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -111,7 +122,9 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
                 activityMainBinding.listChats.setOnScrollListener(OnScrollListenerChats())
-
+//                for (chat in chats) {
+//                    Log.d("MM_LOG", chat.toString())
+//                }
             }
         }
 
