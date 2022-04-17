@@ -15,7 +15,7 @@ internal object VK_UPDATE {
         const val TYPING_IN_CHAT_SOME_USERS = 63
     }
 
-    object NEW_NESSAGE {
+    object NEW_MESSAGE {
         const val MESSAGE_ID = 1
         const val FLAGS = 2
         const val MINOR_ID = 3

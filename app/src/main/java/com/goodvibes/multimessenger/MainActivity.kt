@@ -4,6 +4,8 @@ import android.os.Bundle
 import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.Button
+import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
@@ -29,7 +31,7 @@ public class MainActivity : AppCompatActivity() {
     var mActionMode: ActionMode? = null
     lateinit var callback: ListChatsActionModeCallback
 
-    lateinit var allChats: MutableList<Chat>
+    var allChats: MutableList<Chat> = mutableListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
@@ -76,8 +78,9 @@ public class MainActivity : AppCompatActivity() {
         val vk = VK(this);
         //vk.authorize()
         vk.getAllChats(10) { chats ->
+            allChats.addAll(chats)
+            allChats.sortBy { chat -> - chat.lastMessage!!.date }
             GlobalScope.launch(Dispatchers.Main) {
-                allChats = chats
                 var listChatsAdapter: ListChatsAdapter = ListChatsAdapter(this@MainActivity, allChats);
                 activityMainBinding.listChats.setAdapter(listChatsAdapter);
                 activityMainBinding.listChats.setOnItemLongClickListener { parent, view, position, id ->
@@ -97,27 +100,87 @@ public class MainActivity : AppCompatActivity() {
                     for (i in allChats.indices) {
                         if (allChats[i].chatId == event.message.chatId) {
                             allChats[i].lastMessage = event.message
-                            val updatedChat = allChats.removeAt(i)
+                            val updatedChat = allChats!!.removeAt(i)
                             allChats.add(0, updatedChat)
                             break
                         }
                     }
 
-                    var listChatsAdapter: ListChatsAdapter = ListChatsAdapter(this@MainActivity, allChats);
-                    activityMainBinding.listChats.setAdapter(listChatsAdapter);
-                    activityMainBinding.listChats.setOnItemLongClickListener { parent, view, position, id ->
-                        if (mActionMode != null) {
-                            false
+                    GlobalScope.launch(Dispatchers.Main) {
+                        var listChatsAdapter: ListChatsAdapter = ListChatsAdapter(this@MainActivity, allChats);
+                        activityMainBinding.listChats.setAdapter(listChatsAdapter);
+                        activityMainBinding.listChats.setOnItemLongClickListener { parent, view, position, id ->
+                            if (mActionMode != null) {
+                                false
+                            }
+                            mActionMode = startSupportActionMode(callback)!!
+                            true
                         }
-                        mActionMode = startSupportActionMode(callback)!!
-                        true
                     }
                 }
             }
         }
 
+        vk.getChatById(231958258) { chat ->
+            Log.d("MM", chat.toString())
+        }
+
         val tg = Telegram(this)
         tg.client.send(TdApi.GetAuthorizationState(), tg.UpdateHandler())
+
+        tg.getAllChats(10) { chats ->
+            allChats.addAll(chats)
+            allChats.sortBy { chat -> - chat.lastMessage!!.date }
+            GlobalScope.launch(Dispatchers.Main) {
+                var listChatsAdapter: ListChatsAdapter = ListChatsAdapter(this@MainActivity, allChats);
+                activityMainBinding.listChats.setAdapter(listChatsAdapter);
+                activityMainBinding.listChats.setOnItemLongClickListener { parent, view, position, id ->
+                    if (mActionMode != null) {
+                        false
+                    }
+                    mActionMode = startSupportActionMode(callback)!!
+                    true
+                }
+            }
+        }
+
+        tg.getChatById(197730632) { chat ->
+            android.util.Log.d("MM", chat.toString())
+        }
+
+        tg.startUpdateListener { event ->
+            when(event) {
+                is Event.NewMessage -> {
+                    Log.d("VK_LOG", "new incoming message: ${event.message}")
+                    for (i in allChats.indices) {
+                        if (allChats[i].chatId == event.message.chatId) {
+                            allChats[i].lastMessage = event.message
+                            val updatedChat = allChats!!.removeAt(i)
+                            allChats.add(0, updatedChat)
+                            break
+                        }
+                    }
+
+//                    for (chat in allChats) {
+//                        Log.d("MM", "${chat.title} -> ${chat.lastMessage!!.date}")
+//                    }
+                    GlobalScope.launch(Dispatchers.Main) {
+                        var listChatsAdapter: ListChatsAdapter = ListChatsAdapter(this@MainActivity, allChats);
+                        activityMainBinding.listChats.setAdapter(listChatsAdapter);
+                        activityMainBinding.listChats.setOnItemLongClickListener { parent, view, position, id ->
+                            if (mActionMode != null) {
+                                false
+                            }
+                            mActionMode = startSupportActionMode(callback)!!
+                            true
+                        }
+                    }
+                }
+            }
+        }
+
+
+
     }
 
 
