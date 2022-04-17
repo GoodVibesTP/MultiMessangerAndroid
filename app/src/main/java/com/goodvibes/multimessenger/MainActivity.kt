@@ -1,12 +1,16 @@
 package com.goodvibes.multimessenger
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.AbsListView
+import android.widget.AbsListView.OnScrollListener
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -23,6 +27,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 
+
 public class MainActivity : AppCompatActivity() {
     lateinit var activityMainBinding : ActivityMainBinding;
     lateinit var toggle : ActionBarDrawerToggle
@@ -30,6 +35,10 @@ public class MainActivity : AppCompatActivity() {
     lateinit var useCase: MainActivityUC
     lateinit var vk : VK
     lateinit var listChatsAdapter: ListChatsAdapter
+
+    private var numberLastChatVK: Int = 0
+    private var isLoadingChatVK: Boolean = false
+    private var numberChatOnPage: Int = 20
 
     var mActionMode: ActionMode? = null
     lateinit var callback: ListChatsActionModeCallback
@@ -83,9 +92,11 @@ public class MainActivity : AppCompatActivity() {
     }
 
 //TODO: ТУТ ОПРЕДЕЛЕННО НУЖНО ВЫНЕСТИ В ФУНКЦИЮ ИНИН КАЛЛБЭКА
+    @RequiresApi(Build.VERSION_CODES.M)
     private fun initChatsAllAdapter() {
         useCase.getAllChats(10, 0) { chats ->
             GlobalScope.launch(Dispatchers.Main) {
+                numberLastChatVK = numberChatOnPage
                 allChats = chats
                 listChatsAdapter = ListChatsAdapter(this@MainActivity, allChats);
                 activityMainBinding.listChats.setAdapter(listChatsAdapter);
@@ -98,6 +109,21 @@ public class MainActivity : AppCompatActivity() {
                     mActionMode = startActionMode(callback)!!
                     true
                 }
+//                activityMainBinding.listChats.setOnScrollChangeListener { view, scrollX, scrollY, oldScrollX, oldScrollY ->
+//                    if (!isLoadingChatVK) {
+//                        if (scrollY > numberLastChatVK) {
+//                            isLoadingChatVK = true
+//                            useCase.getAllChats(10, numberLastChatVK) {chats ->
+//                                numberLastChatVK = scrollY
+//                                isLoadingChatVK = false
+//                                listChatsAdapter.addAll(chats)
+//                            }
+//                        }
+//                        Log.d("ScrollView","scrollX_"+scrollX+"_scrollY_"+scrollY+"_oldScrollX_"+oldScrollX+"_oldScrollY_"+oldScrollY);
+//                    }
+//                }
+                activityMainBinding.listChats.setOnScrollListener(OnScrollListenerChats())
+
             }
         }
 
@@ -189,6 +215,24 @@ public class MainActivity : AppCompatActivity() {
         }
     }
 
+    inner class OnScrollListenerChats : OnScrollListener {
+        override fun onScrollStateChanged(recyclerView: AbsListView?, newState: Int) {
+        }
+
+        override fun onScroll(view: AbsListView?, firstVisibleItem: Int,
+                              visibleItemCount: Int, totalItemCount: Int) {
+            if (!isLoadingChatVK &&  (firstVisibleItem +  visibleItemCount == totalItemCount)) {
+                isLoadingChatVK = true
+                useCase.getAllChats(10, numberLastChatVK) {chats ->
+                    numberLastChatVK += numberChatOnPage
+                    isLoadingChatVK = false
+                    listChatsAdapter.addAll(chats)
+                }
+
+            }
+        }
+
+    }
 }
 
 
