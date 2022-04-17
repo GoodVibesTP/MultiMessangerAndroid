@@ -1,16 +1,17 @@
 package com.goodvibes.multimessenger.usecase
 
-import android.widget.Toast
+import com.goodvibes.multimessenger.network.tgmessenger.Telegram
 import com.goodvibes.multimessenger.network.vkmessenger.VK
 
-class AuthorizationActivityUC(_vkMessenger: VK) {
-    val vk = _vkMessenger
-
+class AuthorizationActivityUC(
+    private val _vkMessenger: VK,
+    private val _tgMessenger: Telegram
+) {
     fun IsLoginVK(): Boolean {
-        return true;
+        return _vkMessenger.isAuthorized()
     }
 
     fun isLoginTG(): Boolean {
-        return false;
+        return _tgMessenger.isAuthorized()
     }
 }

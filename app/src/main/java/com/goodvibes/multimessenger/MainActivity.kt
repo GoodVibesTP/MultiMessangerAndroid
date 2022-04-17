@@ -3,7 +3,6 @@ package com.goodvibes.multimessenger
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
@@ -17,7 +16,6 @@ import androidx.appcompat.widget.Toolbar
 import androidx.drawerlayout.widget.DrawerLayout
 import com.goodvibes.multimessenger.databinding.ActivityMainBinding
 import com.goodvibes.multimessenger.datastructure.Chat
-import com.goodvibes.multimessenger.datastructure.Event
 import com.goodvibes.multimessenger.dialog.SelectFolder
 import com.goodvibes.multimessenger.network.tgmessenger.Telegram
 import com.goodvibes.multimessenger.network.vkmessenger.VK
@@ -27,16 +25,14 @@ import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import org.drinkless.td.libcore.telegram.TdApi
 
-
-public class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity() {
     lateinit var activityMainBinding : ActivityMainBinding;
     lateinit var toggle : ActionBarDrawerToggle
     lateinit var toolbar: Toolbar
     lateinit var useCase: MainActivityUC
-    lateinit var vk : VK
-    lateinit var tg: Telegram
+    val vk = VK
+    val tg = Telegram
     lateinit var listChatsAdapter: ListChatsAdapter
 
     private var numberLastChatVK: Int = 0
@@ -50,8 +46,8 @@ public class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
-        vk = VK(this)
-        tg = Telegram(this)
+        vk.initClientWithActivity(this)
+        tg.initClientWithActivity(this)
         useCase = MainActivityUC(this, vk, tg)
         activityMainBinding = ActivityMainBinding.inflate(layoutInflater);
         setContentView(activityMainBinding.root)

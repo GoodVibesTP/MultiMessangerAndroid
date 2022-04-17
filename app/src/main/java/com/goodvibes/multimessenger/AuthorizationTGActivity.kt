@@ -22,9 +22,7 @@ class AuthorizationTGActivity : AppCompatActivity() {
         val transaction = supportFragmentManager.beginTransaction()
         transaction.add(R.id.fragment_container_auth_tg_activity, fragment1)
         transaction.commit()
-        val vk = VK(this)
-        val tg = Telegram(this)
-        useCase = AuthorizationTGActivityUC(this, vk, tg)
+        useCase = AuthorizationTGActivityUC(this, VK, Telegram)
     }
 
     fun SendCodeForTGAuth(number: String) {

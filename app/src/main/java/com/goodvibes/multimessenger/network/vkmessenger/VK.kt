@@ -22,10 +22,14 @@ import retrofit2.converter.gson.GsonConverterFactory
 import kotlin.math.roundToInt
 
 
-class VK(
-    private val activity: AppCompatActivity
-) : Messenger {
+object VK : Messenger {
     override val messenger = Messengers.VK
+
+    private lateinit var activity: AppCompatActivity
+
+    fun initClientWithActivity(activity: AppCompatActivity) {
+        this.activity = activity
+    }
 
     private var haveAuthorization = true
     private val vkClient = OriginalVKClient
@@ -40,30 +44,28 @@ class VK(
         }
     }
 
-    private val authLauncher = vkClient.login(activity) { result : VKAuthenticationResult ->
-        when (result) {
-            is VKAuthenticationResult.Success -> {
-                // User passed authorization
-                Log.d(LOG_TAG,"User passed authorization, token=${result.token.accessToken}")
-            }
-            is VKAuthenticationResult.Failed -> {
-                // User didn't pass authorization
-                Log.d(LOG_TAG,
-                    "User didn't pass authorization, exception = ${result.exception}")
-            }
-        }
-    }
+//    private val authLauncher = vkClient.login(activity) { result : VKAuthenticationResult ->
+//        when (result) {
+//            is VKAuthenticationResult.Success -> {
+//                // User passed authorization
+//                Log.d(LOG_TAG,"User passed authorization, token=${result.token.accessToken}")
+//            }
+//            is VKAuthenticationResult.Failed -> {
+//                // User didn't pass authorization
+//                Log.d(LOG_TAG,
+//                    "User didn't pass authorization, exception = ${result.exception}")
+//            }
+//        }
+//    }
 
-    companion object {
-        private const val LOG_TAG = "MultiMessenger_VK_logs"
-        private val retrofit: Retrofit = Retrofit.Builder()
-            .baseUrl("https://api.vk.com/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
+    private const val LOG_TAG = "MultiMessenger_VK_logs"
+    private val retrofit: Retrofit = Retrofit.Builder()
+        .baseUrl("https://api.vk.com/")
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
 
-        private val messagesService = retrofit.create(VKMessagesApiService::class.java)
-        private val usersService = retrofit.create(VKUsersApiService::class.java)
-    }
+    private val messagesService = retrofit.create(VKMessagesApiService::class.java)
+    private val usersService = retrofit.create(VKUsersApiService::class.java)
 
     override fun isAuthorized(): Boolean {
         return haveAuthorization
@@ -456,7 +458,7 @@ class VK(
     }
 
     override fun authorize() {
-        authLauncher.launch(permissions)
+//        authLauncher.launch(permissions)
     }
 
     private fun listenForEvents(
