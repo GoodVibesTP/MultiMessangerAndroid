@@ -1,4 +1,5 @@
 package com.goodvibes.multimessenger.datastructure
+import java.io.Serializable
 
 data class Message(
     var id: Int,
@@ -8,4 +9,4 @@ data class Message(
     var fwdMessages: List<Message>?,
     var replyTo: Message?,
     var messenger: Messengers
-)
+) : Serializable

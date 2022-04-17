@@ -116,7 +116,14 @@ public class MainActivity : AppCompatActivity() {
                     true
                 }
                 activityMainBinding.listChats.setOnScrollListener(OnScrollListenerChats())
-
+                activityMainBinding.listChats.setOnItemClickListener{parent, view, position, id ->
+                    Toast.makeText(this@MainActivity, position.toString(),
+                        Toast.LENGTH_LONG).show()
+                    val intent = Intent(this@MainActivity, ChatActivity::class.java)
+                    val chat = listChatsAdapter.getItem(position)
+                    intent.putExtra("Chat", chat)
+                    startActivity(intent)
+                }
             }
         }
 
@@ -222,13 +229,6 @@ public class MainActivity : AppCompatActivity() {
                 useCase.getAllChats(10, numberLastChatVK) {chats ->
                     numberLastChatVK += numberChatOnPage
                     isLoadingChatVK = false
-//                    val listFilter: MutableList<Chat>
-//                    for (item: chats) {
-//                        if (useCase.isChatInFolder(item, currentFolder)) {
-//                            listFilter.addlast(item);
-//                        }
-//                    }
-
                     listChatsAdapter.addAll(chats)
                 }
 
