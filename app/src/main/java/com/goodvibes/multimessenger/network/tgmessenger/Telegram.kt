@@ -2,9 +2,14 @@ package com.goodvibes.multimessenger.network.tgmessenger
 
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+import com.goodvibes.multimessenger.R
+import com.goodvibes.multimessenger.datastructure.*
+import com.goodvibes.multimessenger.network.Messenger
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.drinkless.td.libcore.telegram.Client
 import org.drinkless.td.libcore.telegram.TdApi
-import org.drinkless.td.libcore.telegram.TdApi.AuthorizationState
 import java.io.File
 import java.util.concurrent.locks.Condition
 import java.util.concurrent.locks.Lock
@@ -13,12 +18,14 @@ import java.util.concurrent.locks.ReentrantLock
 
 class Telegram(
     private val activity: AppCompatActivity
-) {
+) : Messenger {
+    override val messenger = Messengers.TELEGRAM
+
     companion object {
         private const val LOG_TAG = "MultiMessenger_TG_logs"
 
         @Volatile
-        var haveAuthorization = false
+        private var haveAuthorization = false
         @Volatile
         private var needQuit = false
         @Volatile
@@ -26,15 +33,62 @@ class Telegram(
 
         private val defaultHandler: Client.ResultHandler = DefaultHandler()
 
-        val authorizationLock: Lock = ReentrantLock()
-        val gotAuthorization: Condition = authorizationLock.newCondition()
+        private val authorizationLock: Lock = ReentrantLock()
+        private val gotAuthorization: Condition = authorizationLock.newCondition()
 
-        val libraryLoaded = try {
+        private val libraryLoaded = try {
             System.loadLibrary("tdjni")
         } catch (e: UnsatisfiedLinkError) {
             e.printStackTrace()
         }
+
+        private fun toDefaultChat(chat: TdApi.Chat): Chat {
+            return Chat(
+                chatId = chat.id,
+                img = R.drawable.kotik,
+                imgUri = null,
+                title = chat.title,
+                chatType = ChatType.CHAT,
+                lastMessage =
+                    if (chat.lastMessage == null) null
+                    else toDefaultMessage(chat.lastMessage!!),
+                messenger = Messengers.TELEGRAM
+            )
+        }
+
+        private fun toDefaultMessage(message: TdApi.Message): Message {
+            return Message(
+                id = message.id,
+                chatId = message.chatId,
+                userId = when(message.senderId.constructor) {
+                    TdApi.MessageSenderUser.CONSTRUCTOR -> {
+                        (message.senderId as TdApi.MessageSenderUser).userId
+                    }
+                    TdApi.MessageSenderChat.CONSTRUCTOR -> {
+                        (message.senderId as TdApi.MessageSenderChat).chatId
+                    }
+                    else -> {
+                        0
+                    }
+                },
+                text = when(message.content.constructor) {
+                    TdApi.MessageText.CONSTRUCTOR -> {
+                        (message.content as TdApi.MessageText).text.text
+                    }
+                    else -> {
+                        "Текст сообщения не поддерживается данной версией приложения"
+                    }
+                },
+                date = message.date,
+                fwdMessages = null,
+                replyTo = null,
+                messenger = Messengers.TELEGRAM
+            )
+        }
     }
+
+    private var registeredForUpdates = false
+    private var onEventsCallback: (Event) -> Unit = { }
 
     private val appDir = activity.filesDir.path
 
@@ -63,26 +117,91 @@ class Telegram(
         )
     }
 
+    override fun isAuthorized(): Boolean {
+        return haveAuthorization
+    }
+
+    override fun getAllChats(count: Int, first_msg: Int, callback: (MutableList<Chat>) -> Unit) {
+        while(!haveAuthorization) {
+        }
+        client.send(
+            TdApi.GetChats(null, count),
+            CallbackHandler(callback)
+        )
+    }
+
+    override fun getMessagesFromChat(
+        chat_id: Long,
+        count: Int,
+        first_msg: Int,
+        callback: (MutableList<Message>) -> Unit
+    ) {
+        GlobalScope.launch {
+            delay(10000)
+            Log.d(LOG_TAG, "getMessagesFromChat")
+            client.send(
+                TdApi.GetChatHistory(
+                    chat_id,
+                    10,
+                    0,
+                    100,
+                    false
+                ),
+                CallbackHandler(callback)
+            )
+            delay(10000)
+            client.send(
+                TdApi.GetChatHistory(
+                    chat_id,
+                    10,
+                    0,
+                    100,
+                    true
+                ),
+                CallbackHandler(callback)
+            )
+        }
+    }
+
+    override fun sendMessage(
+        user_id: Long,
+        text: String,
+        callback: (Long) -> Unit
+    ) {
+        TODO("Not yet implemented")
+    }
+
+    override fun getChatById(
+        chat_id: Long,
+        callback: (Chat) -> Unit
+    ) {
+        GlobalScope.launch {
+            delay(2000)
+            Log.d(LOG_TAG, "getChatById, ${chats[chat_id]}")
+            Log.d(LOG_TAG, chats.toString())
+            if (chats[chat_id] != null) {
+                callback(toDefaultChat(chats[chat_id]!!))
+            }
+        }
+    }
+
+
+    override fun startUpdateListener(callback: (Event) -> Unit) {
+        if (registeredForUpdates) registeredForUpdates = false
+        onEventsCallback = callback
+        registeredForUpdates = true
+    }
+
     fun sendAuthCode(code: String) {
         client.send(
             TdApi.CheckAuthenticationCode(code),
-            //TdApi.CheckAuthenticationPassword(),
             AuthorizationRequestHandler()
         )
     }
 
-    fun getAllChats() {
-        while(!haveAuthorization) {
-        }
-        client.send(
-            TdApi.GetChats(),
-            UpdateHandler()
-        )
-    }
+    private var authorizationState: TdApi.AuthorizationState? = null
 
-    private var authorizationState: AuthorizationState? = null
-
-    private fun onAuthorizationStateUpdated(authorizationState: AuthorizationState?) {
+    private fun onAuthorizationStateUpdated(authorizationState: TdApi.AuthorizationState?) {
         if (authorizationState != null) {
             this.authorizationState = authorizationState
         }
@@ -203,6 +322,35 @@ class Telegram(
         }
     }
 
+    inner class CallbackHandler<T>(
+        val callback: (T) -> Unit
+    ) : Client.ResultHandler {
+        override fun onResult(tdObject: TdApi.Object) {
+            when(tdObject.constructor) {
+                TdApi.Chats.CONSTRUCTOR -> {
+                    val chatIds = (tdObject as TdApi.Chats).chatIds
+                    val chatArray = arrayListOf<Chat>()
+                    chatArray.ensureCapacity(chatIds.size)
+                    for (chatId in chatIds) {
+                        val telegramNextChat = chats[chatId]
+                        if (telegramNextChat != null) {
+                            chatArray.add(toDefaultChat(telegramNextChat))
+                        }
+                    }
+                    callback(chatArray as T)
+                }
+                TdApi.Messages.CONSTRUCTOR -> {
+                    val messages = (tdObject as TdApi.Messages).messages
+                    val messageArray = arrayListOf<Message>()
+                    messageArray.ensureCapacity(messages.size)
+                    for (message in messages) {
+                        messageArray.add(toDefaultMessage(message))
+                    }
+                    callback(messageArray as T)
+                }
+            }
+        }
+    }
     inner class UpdateHandler : Client.ResultHandler {
         override fun onResult(tdObject: TdApi.Object) {
             when (tdObject.constructor) {
@@ -263,9 +411,9 @@ class Telegram(
                         }
                     }
 
-                    for (chat in chats) {
-                        Log.d(LOG_TAG, chat.toString())
-                    }
+//                    for (chat in chats) {
+//                        Log.d(LOG_TAG, chat.toString())
+//                    }
                 }
                 TdApi.UpdateChatPosition.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateChatPosition")
@@ -286,7 +434,15 @@ class Telegram(
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateMessageContent")
                 }
                 TdApi.UpdateNewMessage.CONSTRUCTOR -> {
-                    Log.d(LOG_TAG, "UpdateHandler -> UpdateNewMessage")
+                    Log.d(LOG_TAG, "UpdateHandler -> UpdateNewMessage, $tdObject")
+                    val updateNewMessage = tdObject as TdApi.UpdateNewMessage
+                    if (registeredForUpdates) {
+                        onEventsCallback(Event.NewMessage(
+                            message = toDefaultMessage(updateNewMessage.message),
+                            direction = Event.NewMessage.Direction.INGOING
+                            )
+                        )
+                    }
                 }
                 TdApi.UpdateMessageMentionRead.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateMessageMentionRead")
@@ -340,5 +496,9 @@ class Telegram(
                 else -> Log.d(LOG_TAG, "Receive wrong response from TDLib: $tdObject")
             }
         }
+    }
+
+    override fun authorize() {
+        TODO("Not yet implemented")
     }
 }

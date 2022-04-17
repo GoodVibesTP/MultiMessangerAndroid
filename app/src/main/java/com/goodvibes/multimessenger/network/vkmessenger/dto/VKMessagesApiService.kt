@@ -16,19 +16,26 @@ interface VKMessagesApiService {
     @GET("method/messages.getHistory?v=5.131")
     fun getHistory(
         @Query("access_token") access_token: String,
-        @Query("peer_id") peer_id: Int,
+        @Query("peer_id") peer_id: Long,
         @Query("count") count: Int,
         @Query("offset") offset: Int = 0,
         @Query("random_id") random_id: Int = 0
     ): Call<VKRespond<VKMessagesGetHistoryResponse>>
 
+    @GET("method/messages.getConversationsById?v=5.131")
+    fun getConversationsById(
+        @Query("access_token") access_token: String,
+        @Query("peer_ids") peer_ids: Long,
+        @Query("extended") extended: Int = 1
+    ): Call<VKRespond<VKMessagesGetConversationsByIdResponse>>
+
     @GET("method/messages.send?v=5.131")
     fun send(
         @Query("access_token") access_token: String,
-        @Query("user_id") user_id: Int,
+        @Query("user_id") user_id: Long,
         @Query("message") message: String,
         @Query("random_id") random_id: Int = 0
-    ): Call<VKRespond<Int>>
+    ): Call<VKRespond<Long>>
 
     @GET("method/messages.getLongPollServer?v=5.131")
     fun getLongPollServer(

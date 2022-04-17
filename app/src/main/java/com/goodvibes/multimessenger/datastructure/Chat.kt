@@ -1,7 +1,7 @@
 package com.goodvibes.multimessenger.datastructure
 
 data class Chat(
-    var chatId: Int,
+    var chatId: Long,
     var img: Int,
     var imgUri: String?,
     var title: String,

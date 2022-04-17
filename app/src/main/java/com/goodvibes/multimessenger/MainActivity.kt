@@ -45,7 +45,7 @@ public class MainActivity : AppCompatActivity() {
     var mActionMode: ActionMode? = null
     lateinit var callback: ListChatsActionModeCallback
 
-    lateinit var allChats: MutableList<Chat>
+    var allChats: MutableList<Chat> = mutableListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
@@ -116,37 +116,103 @@ public class MainActivity : AppCompatActivity() {
             }
         }
 
-        vk.startUpdateListener { event ->
-            when(event) {
-                is Event.NewMessage -> {
-                    Log.d("VK_LOG", "new incoming message: ${event.message}")
-                    for (i in allChats.indices) {
-                        if (allChats[i].chatId == event.message.chatId) {
-                            allChats[i].lastMessage = event.message
-                            val updatedChat = allChats.removeAt(i)
-                            allChats.add(0, updatedChat)
-                            break
-                        }
-                    }
-
-                    var listChatsAdapter: ListChatsAdapter = ListChatsAdapter(this@MainActivity, allChats);
-                    activityMainBinding.listChats.setAdapter(listChatsAdapter);
-                    activityMainBinding.listChats.setOnItemLongClickListener { parent, view, position, id ->
-                        if (mActionMode != null) {
-                            false
-                        }
-                        view.isSelected = true
-                        callback.setClickedView(position)
-                        mActionMode = startActionMode(callback)!!
-
-                        true
-                    }
-                }
-            }
-        }
-
-        val tg = Telegram(this)
-        tg.client.send(TdApi.GetAuthorizationState(), tg.UpdateHandler())
+//        vk.startUpdateListener { event ->
+//            when(event) {
+//                is Event.NewMessage -> {
+//                    Log.d("VK_LOG", "new incoming message: ${event.message}")
+//                    for (i in allChats.indices) {
+//                        if (allChats[i].chatId == event.message.chatId) {
+//                            allChats[i].lastMessage = event.message
+//                            val updatedChat = allChats!!.removeAt(i)
+//                            allChats.add(0, updatedChat)
+//                            break
+//                        }
+//                    }
+//
+//                    GlobalScope.launch(Dispatchers.Main) {
+//                        var listChatsAdapter: ListChatsAdapter = ListChatsAdapter(this@MainActivity, allChats);
+//                        activityMainBinding.listChats.setAdapter(listChatsAdapter);
+//                        activityMainBinding.listChats.setOnItemLongClickListener { parent, view, position, id ->
+//                            if (mActionMode != null) {
+//                                false
+//                            }
+//                            mActionMode = startSupportActionMode(callback)!!
+//                            true
+//                        }
+//                        view.isSelected = true
+//                        callback.setClickedView(position)
+//                        mActionMode = startActionMode(callback)!!
+//
+//                        true
+//                    }
+//                }
+//            }
+//        }
+//
+//        vk.getChatById(231958258) { chat ->
+//            Log.d("MM", chat.toString())
+//        }
+//
+//        val tg = Telegram(this)
+//        tg.client.send(TdApi.GetAuthorizationState(), tg.UpdateHandler())
+//
+//        tg.getAllChats(10) { chats ->
+//            allChats.addAll(chats)
+//            allChats.sortBy { chat -> - chat.lastMessage!!.date }
+//            GlobalScope.launch(Dispatchers.Main) {
+//                var listChatsAdapter: ListChatsAdapter = ListChatsAdapter(this@MainActivity, allChats);
+//                activityMainBinding.listChats.setAdapter(listChatsAdapter);
+//                activityMainBinding.listChats.setOnItemLongClickListener { parent, view, position, id ->
+//                    if (mActionMode != null) {
+//                        false
+//                    }
+//                    mActionMode = startSupportActionMode(callback)!!
+//                    true
+//                }
+//            }
+//        }
+//
+//        tg.getChatById(197730632) { chat ->
+//            android.util.Log.d("MM", chat.toString())
+//        }
+//
+//        tg.getMessagesFromChat(197730632, 100, 0) { messages ->
+//            for (message in messages) {
+//                Log.d("MM", message.toString())
+//            }
+//        }
+//
+//        tg.startUpdateListener { event ->
+//            when(event) {
+//                is Event.NewMessage -> {
+//                    Log.d("VK_LOG", "new incoming message: ${event.message}")
+//                    for (i in allChats.indices) {
+//                        if (allChats[i].chatId == event.message.chatId) {
+//                            allChats[i].lastMessage = event.message
+//                            val updatedChat = allChats!!.removeAt(i)
+//                            allChats.add(0, updatedChat)
+//                            break
+//                        }
+//                    }
+//
+////                    for (chat in allChats) {
+////                        Log.d("MM", "${chat.title} -> ${chat.lastMessage!!.date}")
+////                    }
+//                    GlobalScope.launch(Dispatchers.Main) {
+//                        var listChatsAdapter: ListChatsAdapter = ListChatsAdapter(this@MainActivity, allChats);
+//                        activityMainBinding.listChats.setAdapter(listChatsAdapter);
+//                        activityMainBinding.listChats.setOnItemLongClickListener { parent, view, position, id ->
+//                            if (mActionMode != null) {
+//                                false
+//                            }
+//                            mActionMode = startSupportActionMode(callback)!!
+//                            true
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//
     }
 
 

@@ -26,8 +26,11 @@ class VK(
     private val activity: AppCompatActivity
 ) : Messenger {
     override val messenger = Messengers.VK
+
+    private var haveAuthorization = true
     private val vkClient = OriginalVKClient
-    private var token = "3b62a1e7a638b1c74cf9515b5ea3f2fdba408ae9fa49213aa4c6b787416cdbba593538d75020d69cf785a"
+
+    private var token = "4d5b08a05e8c061bc2a26dd906c3989dc1277824e3d96cf306d6bcac409a0d0ec1bb3b0246cfdd689b6c7"
 
     private val permissions = arrayListOf<VKScope>()
 
@@ -60,6 +63,10 @@ class VK(
 
         private val messagesService = retrofit.create(VKMessagesApiService::class.java)
         private val usersService = retrofit.create(VKUsersApiService::class.java)
+    }
+
+    override fun isAuthorized(): Boolean {
+        return haveAuthorization
     }
 
     override fun getAllChats(
@@ -133,7 +140,7 @@ class VK(
     }
 
     override fun getMessagesFromChat(
-        chat_id: Int,
+        chat_id: Long,
         count: Int,
         first_msg: Int,
         callback: (MutableList<Message>) -> Unit
@@ -200,22 +207,87 @@ class VK(
         Log.d(LOG_TAG, "$methodName request: ${callForVKRespond.request()}")
     }
 
-    override fun sendMessage(
-        user_id: Int,
-        text: String,
-        callback: (Int) -> Unit
+    override fun getChatById(
+        chat_id: Long,
+        callback: (Chat) -> Unit
     ) {
         val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
-        val callForVKRespond: Call<VKRespond<Int>> = messagesService.send(
+        val callForVKRespond: Call<VKRespond<VKMessagesGetConversationsByIdResponse>> = messagesService.getConversationsById(
+            access_token = this.token,
+            peer_ids = chat_id
+        )
+
+        Log.d(LOG_TAG, "$methodName request: ${callForVKRespond.request()}")
+
+        callForVKRespond.enqueue(object : Callback<VKRespond<VKMessagesGetConversationsByIdResponse>> {
+            override fun onResponse(
+                call: Call<VKRespond<VKMessagesGetConversationsByIdResponse>>,
+                response: Response<VKRespond<VKMessagesGetConversationsByIdResponse>>
+            ) {
+                Log.d(LOG_TAG, "$methodName response code: ${response.code()}")
+                if (response.isSuccessful) {
+                    val responseBody = response.body()
+                    when {
+                        responseBody == null -> {
+                            Log.d(LOG_TAG, "$methodName successful, but response.body() is null")
+                        }
+                        responseBody.response != null -> {
+                            Log.d(
+                                LOG_TAG,
+                                "$methodName successful"
+                            )
+                            Log.d(
+                                LOG_TAG,
+                                "$methodName: get ${responseBody.response.count} chats"
+                            )
+                            val conversationWithMessage = VKMessagesConversationWithMessage(
+                                conversation = responseBody.response.items[0],
+                                lastMessage = null
+                            )
+                            val newChat = toDefaultChat(conversationWithMessage, responseBody.response)
+                            callback(newChat)
+                        }
+                        responseBody.error != null -> {
+                            Log.d(
+                                LOG_TAG,
+                                "$methodName error ${responseBody.error.errorCode}: ${responseBody.error.errorMsg}"
+                            )
+                        }
+                        else -> {
+                            Log.d(
+                                LOG_TAG,
+                                "$methodName response is null && error is null"
+                            )
+                        }
+                    }
+                }
+            }
+
+            override fun onFailure(
+                call: Call<VKRespond<VKMessagesGetConversationsByIdResponse>>,
+                t: Throwable
+            ) {
+                Log.d(LOG_TAG, "$methodName failure: $t")
+            }
+        })
+    }
+
+    override fun sendMessage(
+        user_id: Long,
+        text: String,
+        callback: (Long) -> Unit
+    ) {
+        val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
+        val callForVKRespond: Call<VKRespond<Long>> = messagesService.send(
             access_token = this.token,
             user_id = user_id,
             message = text
         )
 
-        callForVKRespond.enqueue(object : Callback<VKRespond<Int>> {
+        callForVKRespond.enqueue(object : Callback<VKRespond<Long>> {
             override fun onResponse(
-                call: Call<VKRespond<Int>>,
-                response: Response<VKRespond<Int>>
+                call: Call<VKRespond<Long>>,
+                response: Response<VKRespond<Long>>
             ) {
                 Log.d(LOG_TAG, "$methodName response code: ${response.code()}")
                 if (response.isSuccessful) {
@@ -248,7 +320,7 @@ class VK(
             }
 
             override fun onFailure(
-                call: Call<VKRespond<Int>>,
+                call: Call<VKRespond<Long>>,
                 t: Throwable
             ) {
                 Log.d(LOG_TAG, "$methodName failure: $t")
@@ -258,7 +330,7 @@ class VK(
         Log.d(LOG_TAG, "$methodName request: ${callForVKRespond.request()}")
     }
 
-    fun startUpdateListener(callback: (Event) -> Unit) {
+    override fun startUpdateListener(callback: (Event) -> Unit) {
         val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
         val callForVKRespond: Call<VKRespond<VKMessagesGetLongPoolServerResponse>> =
             messagesService.getLongPollServer(
@@ -423,8 +495,8 @@ class VK(
                         for (updateItem in responseBody.updates) {
                             val event: Event? = when(updateItem[0].asInt) {
                                 VK_UPDATE.EVENTS.NEW_MESSAGE -> {
-                                    if (updateItem.size > VK_UPDATE.NEW_NESSAGE.ADDITIONAL_FIELD) {
-                                        val ADDITIONAL_FIELD = VK_UPDATE.NEW_NESSAGE.ADDITIONAL_FIELD
+                                    if (updateItem.size > VK_UPDATE.NEW_MESSAGE.ADDITIONAL_FIELD) {
+                                        val ADDITIONAL_FIELD = VK_UPDATE.NEW_MESSAGE.ADDITIONAL_FIELD
                                         if (updateItem[ADDITIONAL_FIELD].isJsonObject) {
                                             updateItem[ADDITIONAL_FIELD].asJsonObject.get("fwd")?.asString
                                         }
@@ -435,15 +507,16 @@ class VK(
                                     }
                                     Event.NewMessage(
                                         message = Message(
-                                            id = updateItem[VK_UPDATE.NEW_NESSAGE.MESSAGE_ID].asInt,
-                                            chatId = updateItem[VK_UPDATE.NEW_NESSAGE.MINOR_ID].asInt,
-                                            userId = updateItem[VK_UPDATE.NEW_NESSAGE.MINOR_ID].asInt,
-                                            text = updateItem[VK_UPDATE.NEW_NESSAGE.TEXT].asString,
+                                            id = updateItem[VK_UPDATE.NEW_MESSAGE.MESSAGE_ID].asLong,
+                                            chatId = updateItem[VK_UPDATE.NEW_MESSAGE.MINOR_ID].asLong,
+                                            userId = updateItem[VK_UPDATE.NEW_MESSAGE.MINOR_ID].asLong,
+                                            text = updateItem[VK_UPDATE.NEW_MESSAGE.TEXT].asString,
+                                            date = (System.currentTimeMillis() / 1000L).toInt(),
                                             fwdMessages = null,
                                             replyTo = null,
                                             messenger = Messengers.VK
                                         ),
-                                        direction = if (updateItem[VK_UPDATE.NEW_NESSAGE.FLAGS].asInt and 2 == 0) {
+                                        direction = if (updateItem[VK_UPDATE.NEW_MESSAGE.FLAGS].asInt and 2 == 0) {
                                             Event.NewMessage.Direction.INGOING
                                         }
                                         else {
