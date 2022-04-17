@@ -47,6 +47,22 @@ class Telegram(
     val contacts = mutableMapOf<Long,TdApi.User>()
     val chats = mutableMapOf<Long, TdApi.Chat>()
 
+    fun sendAuthPhone(phone: String) {
+        client.send(
+            TdApi.SetAuthenticationPhoneNumber(
+                phone,
+                TdApi.PhoneNumberAuthenticationSettings(
+                    false,
+                    false,
+                    false,
+                    false,
+                    null
+                )
+            ),
+            AuthorizationRequestHandler()
+        )
+    }
+
     fun sendAuthCode(code: String) {
         client.send(
             TdApi.CheckAuthenticationCode(code),
@@ -100,20 +116,20 @@ class Telegram(
             TdApi.AuthorizationStateWaitPhoneNumber.CONSTRUCTOR -> {
                 Log.d(LOG_TAG,
                     "onAuthorizationStateUpdated -> AuthorizationStateWaitPhoneNumber")
-                val phoneNumber: String = "+79777569732"
-                client.send(
-                    TdApi.SetAuthenticationPhoneNumber(
-                        phoneNumber,
-                        TdApi.PhoneNumberAuthenticationSettings(
-                            false,
-                            false,
-                            false,
-                            false,
-                            null
-                        )
-                    ),
-                    AuthorizationRequestHandler()
-                )
+//                val phoneNumber: String = "+79777569732"
+//                client.send(
+//                    TdApi.SetAuthenticationPhoneNumber(
+//                        phoneNumber,
+//                        TdApi.PhoneNumberAuthenticationSettings(
+//                            false,
+//                            false,
+//                            false,
+//                            false,
+//                            null
+//                        )
+//                    ),
+//                    AuthorizationRequestHandler()
+//                )
             }
             TdApi.AuthorizationStateWaitOtherDeviceConfirmation.CONSTRUCTOR -> {
                 Log.d(LOG_TAG,
