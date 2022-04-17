@@ -25,8 +25,6 @@ import kotlin.math.roundToInt
 class VK(
     private val activity: AppCompatActivity
 ) : Messenger {
-    private val LOG_TAG = "VK_LOG"
-
     override val messenger = Messengers.VK
     private val vkClient = OriginalVKClient
     private var token = "2e89e742c2ad5d91fff9caa13c8662e83dbf088bafdf218f6bb228fac80243c20ab82eb4e6b52fa6c0860"
@@ -54,6 +52,7 @@ class VK(
     }
 
     companion object {
+        private const val LOG_TAG = "MultiMessenger_VK_logs"
         private val retrofit: Retrofit = Retrofit.Builder()
             .baseUrl("https://api.vk.com/")
             .addConverterFactory(GsonConverterFactory.create())

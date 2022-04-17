@@ -19,6 +19,7 @@ import com.goodvibes.multimessenger.databinding.ActivityMainBinding
 import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.Event
 import com.goodvibes.multimessenger.dialog.SelectFolder
+import com.goodvibes.multimessenger.network.tgmessenger.Telegram
 import com.goodvibes.multimessenger.network.vkmessenger.VK
 import com.goodvibes.multimessenger.usecase.MainActivityUC
 import com.goodvibes.multimessenger.util.ListFoldersAdapter
@@ -26,6 +27,7 @@ import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import org.drinkless.td.libcore.telegram.TdApi
 
 
 public class MainActivity : AppCompatActivity() {
@@ -109,19 +111,6 @@ public class MainActivity : AppCompatActivity() {
                     mActionMode = startActionMode(callback)!!
                     true
                 }
-//                activityMainBinding.listChats.setOnScrollChangeListener { view, scrollX, scrollY, oldScrollX, oldScrollY ->
-//                    if (!isLoadingChatVK) {
-//                        if (scrollY > numberLastChatVK) {
-//                            isLoadingChatVK = true
-//                            useCase.getAllChats(10, numberLastChatVK) {chats ->
-//                                numberLastChatVK = scrollY
-//                                isLoadingChatVK = false
-//                                listChatsAdapter.addAll(chats)
-//                            }
-//                        }
-//                        Log.d("ScrollView","scrollX_"+scrollX+"_scrollY_"+scrollY+"_oldScrollX_"+oldScrollX+"_oldScrollY_"+oldScrollY);
-//                    }
-//                }
                 activityMainBinding.listChats.setOnScrollListener(OnScrollListenerChats())
 
             }
@@ -155,6 +144,9 @@ public class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
+        val tg = Telegram(this)
+        tg.client.send(TdApi.GetAuthorizationState(), tg.UpdateHandler())
     }
 
 
