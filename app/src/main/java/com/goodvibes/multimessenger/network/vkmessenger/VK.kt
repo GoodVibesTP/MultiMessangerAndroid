@@ -29,7 +29,7 @@ class VK(
 
     private var haveAuthorization = true
     private val vkClient = OriginalVKClient
-    private var token = ""
+    private var token = "4d5b08a05e8c061bc2a26dd906c3989dc1277824e3d96cf306d6bcac409a0d0ec1bb3b0246cfdd689b6c7"
 
     private val permissions = arrayListOf<VKScope>()
 

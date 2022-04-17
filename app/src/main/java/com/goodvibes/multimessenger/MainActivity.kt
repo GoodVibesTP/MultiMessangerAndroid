@@ -148,6 +148,12 @@ public class MainActivity : AppCompatActivity() {
             android.util.Log.d("MM", chat.toString())
         }
 
+        tg.getMessagesFromChat(197730632, 100, 0) { messages ->
+            for (message in messages) {
+                Log.d("MM", message.toString())
+            }
+        }
+
         tg.startUpdateListener { event ->
             when(event) {
                 is Event.NewMessage -> {

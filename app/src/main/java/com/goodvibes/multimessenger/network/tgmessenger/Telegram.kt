@@ -120,7 +120,31 @@ class Telegram(
         first_msg: Int,
         callback: (MutableList<Message>) -> Unit
     ) {
-        TODO("Not yet implemented")
+        GlobalScope.launch {
+            delay(10000)
+            Log.d(LOG_TAG, "getMessagesFromChat")
+            client.send(
+                TdApi.GetChatHistory(
+                    chat_id,
+                    10,
+                    0,
+                    100,
+                    false
+                ),
+                CallbackHandler(callback)
+            )
+            delay(10000)
+            client.send(
+                TdApi.GetChatHistory(
+                    chat_id,
+                    10,
+                    0,
+                    100,
+                    true
+                ),
+                CallbackHandler(callback)
+            )
+        }
     }
 
     override fun sendMessage(
@@ -298,6 +322,15 @@ class Telegram(
                         }
                     }
                     callback(chatArray as T)
+                }
+                TdApi.Messages.CONSTRUCTOR -> {
+                    val messages = (tdObject as TdApi.Messages).messages
+                    val messageArray = arrayListOf<Message>()
+                    messageArray.ensureCapacity(messages.size)
+                    for (message in messages) {
+                        messageArray.add(toDefaultMessage(message))
+                    }
+                    callback(messageArray as T)
                 }
             }
         }
