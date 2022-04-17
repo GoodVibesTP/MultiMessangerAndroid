@@ -100,7 +100,7 @@ class Telegram(
             TdApi.AuthorizationStateWaitPhoneNumber.CONSTRUCTOR -> {
                 Log.d(LOG_TAG,
                     "onAuthorizationStateUpdated -> AuthorizationStateWaitPhoneNumber")
-                val phoneNumber: String = "+79777569732"
+                val phoneNumber: String = "+"
                 client.send(
                     TdApi.SetAuthenticationPhoneNumber(
                         phoneNumber,

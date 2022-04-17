@@ -9,23 +9,24 @@
     <include
             layout="@layout/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
+            android:layout_height="56dp"
             android:id="@+id/include"
             />
-    <androidx.recyclerview.widget.RecyclerView
+    <ListView
             android:id="@+id/list_message"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
+            android:stackFromBottom="true"
             tools:listitem="@layout/list_item_message"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintBottom_toTopOf="@+id/chat_input_message"
+            app:layout_constraintEnd_toStartOf="parent"
+            app:layout_constraintStart_toEndOf="parent"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
             />
     <EditText
             android:id="@+id/chat_input_message"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
+            android:layout_height="40dp"
             android:hint="Message: "
             android:textColor="@color/black"
             android:padding="5dp"
@@ -37,7 +38,7 @@
     <ImageView
             android:id="@+id/chat_btn_send_message"
         android:layout_width="50dp"
-        android:layout_height="0dp"
+        android:layout_height="40dp"
         android:src="@drawable/ic_baseline_send_24"
         android:padding="@dimen/cardview_default_elevation"
         app:layout_constraintBottom_toBottomOf="parent"

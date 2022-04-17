@@ -7,9 +7,13 @@ import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.Message
 import com.goodvibes.multimessenger.databinding.ActivityChatBinding
 import com.goodvibes.multimessenger.usecase.ChatActivityUC
+import com.goodvibes.multimessenger.util.ListSingleChatAdapter
 
 class ChatActivity : AppCompatActivity() {
     lateinit var currentChat: Chat
+    lateinit var listMessage: MutableList<Message>
+    lateinit var listMessageAdapter: ListSingleChatAdapter
+
     lateinit var activityChatBinding : ActivityChatBinding;
     lateinit var usecase : ChatActivityUC
 
@@ -19,6 +23,7 @@ class ChatActivity : AppCompatActivity() {
         setContentView(activityChatBinding.root)
 
         currentChat = intent.extras!!.get("Chat") as Chat
+        usecase = ChatActivityUC(this)
 
         activityChatBinding.chatBtnSendMessage.setOnClickListener{
             val messageString = activityChatBinding.chatInputMessage.text.toString()
@@ -28,7 +33,13 @@ class ChatActivity : AppCompatActivity() {
             }
         }
 
+        initListMessage()
+    }
 
 
+    fun initListMessage() {
+        listMessage = usecase.getMessageFromChat(currentChat)
+        listMessageAdapter = ListSingleChatAdapter(this@ChatActivity, listMessage);
+        activityChatBinding.listMessage.setAdapter(listMessageAdapter);
     }
 }

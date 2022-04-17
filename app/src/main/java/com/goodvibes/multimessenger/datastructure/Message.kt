@@ -14,4 +14,6 @@ data class Message(
     var fwdMessages: List<Message>? = null,
     var replyTo: Message? = null,
     var messenger: Messengers? = null,
+    var isMyMessage: Boolean = false,
+    var time: String = "21:00"
 ) : Serializable
