@@ -9,4 +9,6 @@
     <color name="white">#FFFFFFFF</color>
     <color name="main_color">#FF0292b9</color>
     <color name="under_line">#FF0292b9</color>
+    <color name="my_message_green">#89D17D</color>
+    <color name="other_user_message">#91d1d5</color>
 </resources>

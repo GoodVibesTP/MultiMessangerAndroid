@@ -117,6 +117,43 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
                 activityMainBinding.listChats.setOnScrollListener(OnScrollListenerChats())
+                activityMainBinding.listChats.setOnItemClickListener{parent, view, position, id ->
+                    Toast.makeText(this@MainActivity, position.toString(),
+                        Toast.LENGTH_LONG).show()
+                    val intent = Intent(this@MainActivity, ChatActivity::class.java)
+                    val chat = listChatsAdapter.getItem(position)
+                    intent.putExtra("Chat", chat)
+                    startActivity(intent)
+                }
+            }
+        }
+
+        vk.startUpdateListener { event ->
+            when(event) {
+                is Event.NewMessage -> {
+                    Log.d("VK_LOG", "new incoming message: ${event.message}")
+                    for (i in allChats.indices) {
+                        if (allChats[i].chatId == event.message.chatId) {
+                            allChats[i].lastMessage = event.message
+                            val updatedChat = allChats.removeAt(i)
+                            allChats.add(0, updatedChat)
+                            break
+                        }
+                    }
+
+                    var listChatsAdapter: ListChatsAdapter = ListChatsAdapter(this@MainActivity, allChats);
+                    activityMainBinding.listChats.setAdapter(listChatsAdapter);
+                    activityMainBinding.listChats.setOnItemLongClickListener { parent, view, position, id ->
+                        if (mActionMode != null) {
+                            false
+                        }
+                        view.isSelected = true
+                        callback.setClickedView(position)
+                        mActionMode = startActionMode(callback)!!
+
+                        true
+                    }
+                }
             }
         }
     }
@@ -190,13 +227,6 @@ class MainActivity : AppCompatActivity() {
                 useCase.getAllChats(10, numberLastChatVK, vk) {chats ->
                     numberLastChatVK += numberChatOnPage
                     isLoadingChatVK = false
-//                    val listFilter: MutableList<Chat>
-//                    for (item: chats) {
-//                        if (useCase.isChatInFolder(item, currentFolder)) {
-//                            listFilter.addlast(item);
-//                        }
-//                    }
-
                     listChatsAdapter.addAll(chats)
                 }
 

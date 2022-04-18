@@ -1,5 +1,7 @@
 package com.goodvibes.multimessenger.datastructure
 
+import java.io.Serializable
+
 data class Chat(
     var chatId: Long,
     var img: Int,
@@ -9,5 +11,5 @@ data class Chat(
     var chatType: ChatType,
     var messenger: Messengers,
     var folder: Folder = Folder(-100,"empty",),
-)
+) : Serializable
 
