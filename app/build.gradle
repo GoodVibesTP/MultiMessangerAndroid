@@ -77,4 +77,13 @@ dependencies {
 
     // TDLib
     implementation fileTree(dir: 'libs', include: ['*.java'])
+
+    // Room(DB)
+    implementation("androidx.room:room-runtime:2.4.2")
+    annotationProcessor("androidx.room:room-compiler:2.4.2")
+    kapt("androidx.room:room-compiler:2.4.2")
+    implementation("androidx.room:room-ktx:2.4.2")
+
+    // ViewModel
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.1"
 }
