@@ -11,7 +11,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp">
 
-        <LinearLayout
+        <RelativeLayout
                 android:layout_width="match_parent"
                 android:layout_height="75dp"
                 android:layout_marginVertical="10dp"
@@ -22,14 +22,15 @@
                     android:layout_width="80dp"
                     android:layout_height="80dp"
                     android:layout_marginStart="20dp"
-                    android:src="@drawable/images">
-            </ImageView>
+                    android:src="@drawable/images"></ImageView>
 
             <LinearLayout
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="20dp"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:layout_toRightOf="@+id/chat_all_image"
+                    android:layout_toLeftOf="@+id/chat_all_messenger_img">
 
                 <TextView
                         android:id="@+id/chat_all_title"
@@ -40,6 +41,7 @@
                         android:textSize="26sp"
                         android:maxLines="1"
                         android:ellipsize="end"
+                        android:singleLine="true"
                         android:textStyle="bold" />
 
                 <TextView
@@ -57,13 +59,12 @@
                     android:id="@+id/chat_all_messenger_img"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
-                    android:layout_gravity="end"
+                    android:layout_alignParentRight="true"
+                    android:layout_marginRight="10dp"
+                    app:srcCompat="@mipmap/tg_icon" />
 
-                    app:srcCompat="@mipmap/tg_icon"
-                     />
 
-
-        </LinearLayout>
+        </RelativeLayout>
 
     </RelativeLayout>
 

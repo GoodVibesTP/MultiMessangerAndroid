@@ -30,6 +30,7 @@ class ChatActivity : AppCompatActivity() {
         currentChat = intent.extras!!.get("Chat") as Chat
         usecase = ChatActivityUC(this)
         toolbar = findViewById(R.id.toolbar);
+        toolbar.title = currentChat.title
         setSupportActionBar(toolbar);
         supportActionBar?.setDisplayHomeAsUpEnabled(true);
 
