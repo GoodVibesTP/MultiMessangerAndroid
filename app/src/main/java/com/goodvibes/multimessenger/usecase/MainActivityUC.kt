@@ -19,8 +19,12 @@ class MainActivityUC(_mainActivity: MainActivity, _vkMessenger: VK, _tgMessenger
         first_msg: Int,
         callback: (MutableList<Chat>) -> Unit
     ) {
-        vk.getAllChats(count, first_msg, callback = callback)
-        tg.getAllChats(count, first_msg, callback = callback)
+        if (vk.isAuthorized()) {
+            vk.getAllChats(count, first_msg, callback = callback)
+        }
+        if (tg.isAuthorized()) {
+            tg.getAllChats(count, first_msg, callback = callback)
+        }
     }
 
     fun getAllChats(

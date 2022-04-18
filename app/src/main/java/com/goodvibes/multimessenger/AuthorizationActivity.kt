@@ -41,6 +41,7 @@ class AuthorizationActivity : AppCompatActivity() {
             buttonAuthTG.text = "Logout TG"
             buttonAuthTG.setOnClickListener {
                 Toast.makeText(this@AuthorizationActivity, "Logout TG clicked", Toast.LENGTH_SHORT).show()
+                Telegram.logout()
             }
         } else {
             buttonAuthTG.text = "Auth TG"

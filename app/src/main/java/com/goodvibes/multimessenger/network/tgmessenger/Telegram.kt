@@ -117,6 +117,20 @@ object Telegram : Messenger {
         )
     }
 
+    fun sendAuthCode(code: String) {
+        client.send(
+            TdApi.CheckAuthenticationCode(code),
+            AuthorizationRequestHandler()
+        )
+    }
+
+    fun logout() {
+        client.send(
+            TdApi.LogOut(),
+            AuthorizationRequestHandler()
+        )
+    }
+
     override fun isAuthorized(): Boolean {
         return haveAuthorization
     }
@@ -204,13 +218,6 @@ object Telegram : Messenger {
         if (registeredForUpdates) registeredForUpdates = false
         onEventsCallback = callback
         registeredForUpdates = true
-    }
-
-    fun sendAuthCode(code: String) {
-        client.send(
-            TdApi.CheckAuthenticationCode(code),
-            AuthorizationRequestHandler()
-        )
     }
 
     private var authorizationState: TdApi.AuthorizationState? = null
