@@ -16,10 +16,10 @@ class ChatActivityUC(_activityChat: ChatActivity) {
     fun sendMessage(message: Message, callback: (Long) -> Unit) {
         when(message.messenger) {
             Messengers.VK -> {
-                vk.sendMessage(message.userId, message.text, callback)
+                vk.sendMessage(message.chatId, message.text, callback)
             }
             Messengers.TELEGRAM -> {
-                tg.sendMessage(message.userId, message.text, callback)
+                tg.sendMessage(message.chatId, message.text, callback)
             }
         }
     }
