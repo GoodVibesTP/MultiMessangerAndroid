@@ -9,6 +9,9 @@ import com.goodvibes.multimessenger.datastructure.Message
 import com.goodvibes.multimessenger.databinding.ActivityChatBinding
 import com.goodvibes.multimessenger.usecase.ChatActivityUC
 import com.goodvibes.multimessenger.util.ListSingleChatAdapter
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 class ChatActivity : AppCompatActivity() {
     lateinit var currentChat: Chat
@@ -33,8 +36,8 @@ class ChatActivity : AppCompatActivity() {
         activityChatBinding.chatBtnSendMessage.setOnClickListener{
             val messageString = activityChatBinding.chatInputMessage.text.toString()
             if(!messageString.isEmpty()) {
-                val message = Message(text=messageString, chatId = currentChat.chatId)
-                usecase.sendMessage(message)
+                val message = Message(text=messageString, chatId = currentChat.chatId, messenger = currentChat.messenger)
+                usecase.sendMessage(message) { }
             }
         }
 
@@ -43,8 +46,12 @@ class ChatActivity : AppCompatActivity() {
 
 
     fun initListMessage() {
-        listMessage = usecase.getMessageFromChat(currentChat)
-        listMessageAdapter = ListSingleChatAdapter(this@ChatActivity, listMessage);
-        activityChatBinding.listMessage.setAdapter(listMessageAdapter);
+        usecase.getMessageFromChat(currentChat, 100) { listMessage ->
+            GlobalScope.launch(Dispatchers.Main) {
+                listMessageAdapter = ListSingleChatAdapter(this@ChatActivity, listMessage);
+                activityChatBinding.listMessage.setAdapter(listMessageAdapter);
+            }
+        }
+
     }
 }
