@@ -89,8 +89,14 @@ class MainActivity : AppCompatActivity() {
 
         navView.setNavigationItemSelectedListener {
             when(it.itemId) {
-                R.id.nav_home -> Toast.makeText(applicationContext, "Clicked home", Toast.LENGTH_LONG).show()
-                R.id.nav_settings -> Toast.makeText(applicationContext, "Clicked settings", Toast.LENGTH_LONG).show()
+                R.id.nav_home -> {
+                    Toast.makeText(applicationContext, "Clicked home", Toast.LENGTH_LONG).show()
+                }
+                R.id.nav_settings -> {
+                    Toast.makeText(applicationContext, "Clicked settings", Toast.LENGTH_LONG).show()
+                    val intent = Intent(this, AuthorizationActivity::class.java)
+                    startActivity(intent)
+                }
                 R.id.nav_chto_to -> Toast.makeText(applicationContext, "Clicked chtoto", Toast.LENGTH_LONG).show()
             }
             true
@@ -224,7 +230,7 @@ class MainActivity : AppCompatActivity() {
                               visibleItemCount: Int, totalItemCount: Int) {
             if (!isLoadingChatVK &&  (firstVisibleItem + visibleItemCount == totalItemCount)) {
                 isLoadingChatVK = true
-                useCase.getAllChats(10, numberLastChatVK, vk) {chats ->
+                useCase.getAllChats(numberChatOnPage, numberLastChatVK, vk) {chats ->
                     numberLastChatVK += numberChatOnPage
                     isLoadingChatVK = false
                     listChatsAdapter.addAll(chats)

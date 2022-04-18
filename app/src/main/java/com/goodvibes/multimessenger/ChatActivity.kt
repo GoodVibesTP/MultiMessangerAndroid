@@ -37,7 +37,9 @@ class ChatActivity : AppCompatActivity() {
             val messageString = activityChatBinding.chatInputMessage.text.toString()
             if(!messageString.isEmpty()) {
                 val message = Message(text=messageString, chatId = currentChat.chatId, messenger = currentChat.messenger)
-                usecase.sendMessage(message) { }
+                usecase.sendMessage(message) {
+                    listMessage.add(message)
+                }
             }
         }
 
@@ -46,8 +48,10 @@ class ChatActivity : AppCompatActivity() {
 
 
     fun initListMessage() {
-        usecase.getMessageFromChat(currentChat, 100) { listMessage ->
+        listMessage = mutableListOf()
+        usecase.getMessageFromChat(currentChat, 50) { messages ->
             GlobalScope.launch(Dispatchers.Main) {
+                listMessage.addAll(messages)
                 listMessageAdapter = ListSingleChatAdapter(this@ChatActivity, listMessage);
                 activityChatBinding.listMessage.setAdapter(listMessageAdapter);
             }
