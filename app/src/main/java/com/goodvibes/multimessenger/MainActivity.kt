@@ -29,15 +29,14 @@ import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import org.drinkless.td.libcore.telegram.TdApi
 
-
-public class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity() {
     lateinit var activityMainBinding : ActivityMainBinding;
     lateinit var toggle : ActionBarDrawerToggle
     lateinit var toolbar: Toolbar
     lateinit var useCase: MainActivityUC
-    lateinit var vk : VK
+    val vk = VK
+    val tg = Telegram
     lateinit var listChatsAdapter: ListChatsAdapter
 
 
@@ -49,12 +48,13 @@ public class MainActivity : AppCompatActivity() {
     var mActionMode: ActionMode? = null
     lateinit var callback: ListChatsActionModeCallback
 
-    lateinit var allChats: MutableList<Chat>
+    var allChats: MutableList<Chat> = mutableListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
-        vk = VK(this)
-        useCase = MainActivityUC(this, vk)
+        vk.initClientWithActivity(this)
+        tg.initClientWithActivity(this)
+        useCase = MainActivityUC(this, vk, tg)
         activityMainBinding = ActivityMainBinding.inflate(layoutInflater);
         setContentView(activityMainBinding.root)
 
@@ -100,10 +100,11 @@ public class MainActivity : AppCompatActivity() {
 //TODO: ТУТ ОПРЕДЕЛЕННО НУЖНО ВЫНЕСТИ В ФУНКЦИЮ ИНИН КАЛЛБЭКА
     @RequiresApi(Build.VERSION_CODES.M)
     private fun initChatsAllAdapter() {
+    allChats = mutableListOf()
         useCase.getAllChats(10, 0) { chats ->
             GlobalScope.launch(Dispatchers.Main) {
                 numberLastChatVK = numberChatOnPage
-                allChats = chats
+                allChats.addAll(chats)
                 listChatsAdapter = ListChatsAdapter(this@MainActivity, allChats);
                 activityMainBinding.listChats.setAdapter(listChatsAdapter);
                 activityMainBinding.listChats.setOnItemLongClickListener { parent, view, position, id ->
@@ -116,41 +117,8 @@ public class MainActivity : AppCompatActivity() {
                     true
                 }
                 activityMainBinding.listChats.setOnScrollListener(OnScrollListenerChats())
-
             }
         }
-
-        vk.startUpdateListener { event ->
-            when(event) {
-                is Event.NewMessage -> {
-                    Log.d("VK_LOG", "new incoming message: ${event.message}")
-                    for (i in allChats.indices) {
-                        if (allChats[i].chatId == event.message.chatId) {
-                            allChats[i].lastMessage = event.message
-                            val updatedChat = allChats.removeAt(i)
-                            allChats.add(0, updatedChat)
-                            break
-                        }
-                    }
-
-                    var listChatsAdapter: ListChatsAdapter = ListChatsAdapter(this@MainActivity, allChats);
-                    activityMainBinding.listChats.setAdapter(listChatsAdapter);
-                    activityMainBinding.listChats.setOnItemLongClickListener { parent, view, position, id ->
-                        if (mActionMode != null) {
-                            false
-                        }
-                        view.isSelected = true
-                        callback.setClickedView(position)
-                        mActionMode = startActionMode(callback)!!
-
-                        true
-                    }
-                }
-            }
-        }
-
-        val tg = Telegram(this)
-        tg.client.send(TdApi.GetAuthorizationState(), tg.UpdateHandler())
     }
 
 
@@ -217,9 +185,9 @@ public class MainActivity : AppCompatActivity() {
 
         override fun onScroll(view: AbsListView?, firstVisibleItem: Int,
                               visibleItemCount: Int, totalItemCount: Int) {
-            if (!isLoadingChatVK &&  (firstVisibleItem +  visibleItemCount == totalItemCount)) {
+            if (!isLoadingChatVK &&  (firstVisibleItem + visibleItemCount == totalItemCount)) {
                 isLoadingChatVK = true
-                useCase.getAllChats(10, numberLastChatVK) {chats ->
+                useCase.getAllChats(10, numberLastChatVK, vk) {chats ->
                     numberLastChatVK += numberChatOnPage
                     isLoadingChatVK = false
 //                    val listFilter: MutableList<Chat>

@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Button
 import android.widget.Toast
+import com.goodvibes.multimessenger.network.tgmessenger.Telegram
 import com.goodvibes.multimessenger.network.vkmessenger.VK
 import com.goodvibes.multimessenger.usecase.AuthorizationActivityUC
 
@@ -15,8 +16,7 @@ class AuthorizationActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_authorization)
 
-        val vk = VK(this)
-        useCase = AuthorizationActivityUC(vk)
+        useCase = AuthorizationActivityUC(VK, Telegram)
 
         initBtn()
     }
@@ -41,6 +41,7 @@ class AuthorizationActivity : AppCompatActivity() {
             buttonAuthTG.text = "Logout TG"
             buttonAuthTG.setOnClickListener {
                 Toast.makeText(this@AuthorizationActivity, "Logout TG clicked", Toast.LENGTH_SHORT).show()
+                Telegram.logout()
             }
         } else {
             buttonAuthTG.text = "Auth TG"
