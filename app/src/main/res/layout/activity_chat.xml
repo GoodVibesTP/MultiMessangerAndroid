@@ -9,19 +9,19 @@
     <include
             layout="@layout/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="56dp"
+            android:layout_height="wrap_content"
             android:id="@+id/include"
             />
     <ListView
+            android:divider="@null"
             android:id="@+id/list_message"
-            android:stackFromBottom="true"
-            tools:listitem="@layout/list_item_message"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toTopOf="@+id/chat_input_message"
-            app:layout_constraintEnd_toStartOf="parent"
-            app:layout_constraintStart_toEndOf="parent"
             android:layout_width="match_parent"
             android:layout_height="0dp"
+            android:stackFromBottom="true"
+            tools:listitem="@layout/list_item_message"
+            app:layout_constraintTop_toBottomOf="@+id/include"
+            app:layout_constraintBottom_toTopOf="@+id/chat_input_message"
+
             />
     <EditText
             android:id="@+id/chat_input_message"

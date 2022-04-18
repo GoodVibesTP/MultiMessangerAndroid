@@ -16,11 +16,7 @@ class ChatActivityUC(_activityChat: ChatActivity) {
        val result = mutableListOf<Message>(
            Message(text = "Hello", isMyMessage = true),
            Message(text = "sfdjglsdjvjsdf;vsdfjv;sdf", isMyMessage = false),
-           Message(text = "fgljsdvjknsfdv", isMyMessage = true),
-           Message(text = "fvjslfdnfd;vnsdit;br;ohusdi;fvhjvbghfdkjshgljsdhljvb sfd", isMyMessage = false),
-           Message(text = "sdfgjhvjsdfgntj;fsohgtrsjbvsfv;sdfjhgsgfbgsdflhjsgutbvsfdjghfsdg", isMyMessage = false),
-           Message(text = "Hello", isMyMessage = true),
-           Message(text = "Hello", isMyMessage = true)
+           Message(text = "fgljsdvjknsfsdfsdfgsdgsfdg\n\n\n\n\ndafsafafdv", isMyMessage = true),
        )
 
         return result

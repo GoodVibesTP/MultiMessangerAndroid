@@ -3,6 +3,7 @@ package com.goodvibes.multimessenger
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.Toast
+import androidx.appcompat.widget.Toolbar
 import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.Message
 import com.goodvibes.multimessenger.databinding.ActivityChatBinding
@@ -13,6 +14,7 @@ class ChatActivity : AppCompatActivity() {
     lateinit var currentChat: Chat
     lateinit var listMessage: MutableList<Message>
     lateinit var listMessageAdapter: ListSingleChatAdapter
+    lateinit var toolbar: Toolbar
 
     lateinit var activityChatBinding : ActivityChatBinding;
     lateinit var usecase : ChatActivityUC
@@ -24,6 +26,9 @@ class ChatActivity : AppCompatActivity() {
 
         currentChat = intent.extras!!.get("Chat") as Chat
         usecase = ChatActivityUC(this)
+        toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        supportActionBar?.setDisplayHomeAsUpEnabled(true);
 
         activityChatBinding.chatBtnSendMessage.setOnClickListener{
             val messageString = activityChatBinding.chatInputMessage.text.toString()
