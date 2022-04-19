@@ -149,7 +149,7 @@ object Telegram : Messenger {
         while(!haveAuthorization) {
         }
         client.send(
-            TdApi.GetChats(null, count)
+            TdApi.GetChats(null, count + first_chat)
         ) { tdObject ->
             when (tdObject.constructor) {
                 TdApi.Chats.CONSTRUCTOR -> {
@@ -157,7 +157,7 @@ object Telegram : Messenger {
                     val chatArray = arrayListOf<Chat>()
                     val limit = min(first_chat + count, chatIds.size)
                     chatArray.ensureCapacity(limit)
-                    for (i in 0 until limit) {
+                    for (i in first_chat..limit-1) {
                         val telegramNextChat = chats[chatIds[i]]
                         if (telegramNextChat != null) {
                             chatArray.add(toDefaultChat(telegramNextChat))

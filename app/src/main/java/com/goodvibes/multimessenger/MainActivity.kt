@@ -42,7 +42,7 @@ class MainActivity : AppCompatActivity() {
 
     private var numberLastChatVK: Int = 0
     private var isLoadingChatVK: Boolean = false
-    private var numberChatOnPage: Int = 20
+    private var numberChatOnPage: Int = 10
     private var currentFolder: Folder = Folder(idAllFolder, "AllChats")
 
     var mActionMode: ActionMode? = null
@@ -106,7 +106,7 @@ class MainActivity : AppCompatActivity() {
     @RequiresApi(Build.VERSION_CODES.M)
     private fun initChatsAllAdapter() {
     allChats = mutableListOf()
-        useCase.getAllChats(10, 0) { chats ->
+        useCase.getAllChats(numberChatOnPage, 0) { chats ->
             GlobalScope.launch(Dispatchers.Main) {
                 numberLastChatVK = numberChatOnPage
                 allChats.addAll(chats)
@@ -229,7 +229,7 @@ class MainActivity : AppCompatActivity() {
                               visibleItemCount: Int, totalItemCount: Int) {
             if (!isLoadingChatVK &&  (firstVisibleItem + visibleItemCount == totalItemCount)) {
                 isLoadingChatVK = true
-                useCase.getAllChats(numberChatOnPage, numberLastChatVK, vk) {chats ->
+                useCase.getAllChats(numberChatOnPage, numberLastChatVK) {chats ->
                     numberLastChatVK += numberChatOnPage
                     isLoadingChatVK = false
                     listChatsAdapter.addAll(chats)
