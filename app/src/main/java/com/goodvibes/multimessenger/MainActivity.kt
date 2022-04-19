@@ -7,8 +7,11 @@ import android.util.Log
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.AbsListView
 import android.widget.AbsListView.OnScrollListener
+import android.widget.AdapterView
+import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
@@ -138,6 +141,23 @@ class MainActivity : AppCompatActivity() {
                     myDbManager.addChatToDB(item.title, item.chatId)
                     Log.d("low", "Successfully add new chat: ${item.title}!")
                 }
+
+                val options = arrayOf("Папка 1", "Папка 2", "Папка 3")
+                activityMainBinding.include.spOption.adapter = ArrayAdapter<String>(this@MainActivity, android.R.layout.simple_list_item_1, options)
+
+                activityMainBinding.include.spOption.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                    override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
+                        val options = arrayOf("Папка 1", "Папка 2", "Папка 3")
+                        activityMainBinding.include.optionName.text = options.get(p2)
+                    }
+
+                    override fun onNothingSelected(p0: AdapterView<*>?) {
+                        activityMainBinding.include.optionName.text = "Выберите папку"
+                    }
+
+                }
+
+                //TODO: activityMainBinding.options
             }
         }
 
