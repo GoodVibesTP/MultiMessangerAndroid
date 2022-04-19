@@ -15,6 +15,7 @@ import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.drawerlayout.widget.DrawerLayout
+import com.example.testdb3.db.MyDBManager
 import com.goodvibes.multimessenger.databinding.ActivityMainBinding
 import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.Event
@@ -34,6 +35,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var activityMainBinding : ActivityMainBinding;
     lateinit var toggle : ActionBarDrawerToggle
     lateinit var toolbar: Toolbar
+    val myDbManager = MyDBManager(this)
     lateinit var useCase: MainActivityUC
     val vk = VK
     val tg = Telegram
@@ -130,6 +132,12 @@ class MainActivity : AppCompatActivity() {
                     val chat = listChatsAdapter.getItem(position)
                     intent.putExtra("Chat", chat)
                     startActivity(intent)
+                }
+
+                myDbManager.openDb()
+                for (item in chats) {
+                    myDbManager.addChatToDB(item.title, item.chatId)
+                    Log.d("low", "Successfully add new chat: ${item.title}!")
                 }
             }
         }
@@ -234,10 +242,21 @@ class MainActivity : AppCompatActivity() {
                     numberLastChatVK += numberChatOnPage
                     isLoadingChatVK = false
                     listChatsAdapter.addAll(chats)
+
+                    myDbManager.openDb()
+                    for (item in chats) {
+                        myDbManager.addChatToDB(item.title, item.chatId)
+                        Log.d("low", "Successfully add new chat: ${item.title}!")
+                    }
                 }
 
             }
         }
 
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        myDbManager.closeDB()
     }
 }
