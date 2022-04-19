@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName
 
 data class VKMessagesChatSettings(
     @SerializedName("owner_id")
-    val ownerId: Int,
+    val ownerId: Long,
     @SerializedName("title")
     val title: String,
     @SerializedName("photo")

@@ -27,13 +27,19 @@ object VK : Messenger {
 
     private lateinit var activity: AppCompatActivity
 
-    fun initClientWithActivity(activity: AppCompatActivity) {
+    fun init(activity: AppCompatActivity) {
         this.activity = activity
+        getUserInfo(null) {
+            currentUserId = it[0].id
+        }
     }
 
     private var haveAuthorization = true
+    private var currentUserId = 0L
     private val vkClient = OriginalVKClient
-    private var token = "f77765d492f26badb6f60ad8d88010651d790963ad1274f11aebff5afd615aca8b45457e8e270a8d38729"
+
+    private var token = "6aab9dfa5c93bf56c8ee669e6369bb4f3ab025c51b341053360fd09bbe8039938b1b4f30a34a4279adaf5"
+
 
     private val permissions = arrayListOf<VKScope>()
 
@@ -72,7 +78,7 @@ object VK : Messenger {
 
     override fun getAllChats(
         count: Int,
-        first_msg: Int,
+        first_chat: Int,
         callback: (MutableList<Chat>) -> Unit
     ) {
         val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
@@ -81,7 +87,7 @@ object VK : Messenger {
             = messagesService.getConversations(
             access_token = this.token,
             count = count,
-            offset = first_msg
+            offset = first_chat
         )
 
         callForVKRespond.enqueue(object : Callback<VKRespond<VKMessagesGetConversationsResponse>> {
@@ -108,7 +114,7 @@ object VK : Messenger {
                             val chatArray = arrayListOf<Chat>()
                             chatArray.ensureCapacity(responseBody.response.count)
                             for (item in responseBody.response.items) {
-                                val nextChat = toDefaultChat(item, responseBody.response)
+                                val nextChat = toDefaultChat(item, responseBody.response, currentUserId)
                                 chatArray.add(nextChat)
                             }
                             callback(chatArray)
@@ -174,7 +180,7 @@ object VK : Messenger {
                             val messagesArray = arrayListOf<Message>()
                             messagesArray.ensureCapacity(responseBody.response.count)
                             for (item in responseBody.response.items) {
-                                val nextMessage = toDefaultMessage(item)
+                                val nextMessage = toDefaultMessage(item, currentUserId)
                                 if (nextMessage != null) {
                                     messagesArray.add(nextMessage)
                                 }
@@ -245,7 +251,7 @@ object VK : Messenger {
                                 conversation = responseBody.response.items[0],
                                 lastMessage = null
                             )
-                            val newChat = toDefaultChat(conversationWithMessage, responseBody.response)
+                            val newChat = toDefaultChat(conversationWithMessage, responseBody.response, currentUserId)
                             callback(newChat)
                         }
                         responseBody.error != null -> {
@@ -401,13 +407,25 @@ object VK : Messenger {
         Log.d(LOG_TAG, "$methodName request: ${callForVKRespond.request()}")
     }
 
-    fun getUserInfo(user_ids: String, fields: String = "") {
+    private fun getUserInfo(
+        user_ids: String?,
+        fields: String = "",
+        callback: (List<VKUserFull>) -> Unit
+    ) {
         val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
-        val callForVKRespond: Call<VKRespond<List<VKUserFull>>> = usersService.get(
-            access_token = this.token,
-            user_ids = user_ids,
-            fields = fields
-        )
+        val callForVKRespond: Call<VKRespond<List<VKUserFull>>> = if (user_ids == null) {
+            usersService.get(
+                access_token = this.token,
+                fields = fields
+            )
+        }
+        else {
+            usersService.get(
+                access_token = this.token,
+                user_ids = user_ids,
+                fields = fields
+            )
+        }
 
         callForVKRespond.enqueue(object : Callback<VKRespond<List<VKUserFull>>> {
             override fun onResponse(
@@ -428,6 +446,7 @@ object VK : Messenger {
                             )
                             Log.d(LOG_TAG, "$methodName: get ${responseBody.response[0].firstName} " +
                                     "${responseBody.response[0].lastName} ${responseBody.response[0].sex}")
+                            callback(responseBody.response)
                         }
                         responseBody.error != null -> {
                             Log.d(

@@ -12,7 +12,7 @@ interface Messenger {
 
     fun getAllChats(
         count: Int,
-        first_msg: Int = 0,
+        first_chat: Int = 0,
         callback: (MutableList<Chat>) -> Unit
     )
 
