@@ -2,6 +2,7 @@ package com.goodvibes.multimessenger
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.widget.AbsListView
 import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
 import com.goodvibes.multimessenger.datastructure.Chat
@@ -19,6 +20,10 @@ class ChatActivity : AppCompatActivity() {
     lateinit var listMessageAdapter: ListSingleChatAdapter
     lateinit var toolbar: Toolbar
 
+    private var isLoadingNewMessages: Boolean = false
+    private var numberMessageOnPage: Int = 50
+    private var numberLastMessage: Int = 0
+
     lateinit var activityChatBinding : ActivityChatBinding;
     lateinit var usecase : ChatActivityUC
 
@@ -33,7 +38,9 @@ class ChatActivity : AppCompatActivity() {
         toolbar.title = currentChat.title
         setSupportActionBar(toolbar);
         supportActionBar?.setDisplayHomeAsUpEnabled(true);
-
+        toolbar.setNavigationOnClickListener{
+            finish()
+        }
         activityChatBinding.chatBtnSendMessage.setOnClickListener{
             val messageString = activityChatBinding.chatInputMessage.text.toString()
             if(!messageString.isEmpty()) {
@@ -52,9 +59,28 @@ class ChatActivity : AppCompatActivity() {
         listMessage = mutableListOf()
         usecase.getMessageFromChat(currentChat, 50) { messages ->
             GlobalScope.launch(Dispatchers.Main) {
-                listMessage.addAll(messages)
                 listMessageAdapter = ListSingleChatAdapter(this@ChatActivity, listMessage);
+                listMessageAdapter.addAll(messages)
                 activityChatBinding.listMessage.setAdapter(listMessageAdapter);
+                activityChatBinding.listMessage.setOnScrollListener(OnScrollListenerChats())
+            }
+        }
+    }
+
+    inner class OnScrollListenerChats : AbsListView.OnScrollListener {
+        override fun onScrollStateChanged(recyclerView: AbsListView?, newState: Int) {
+        }
+
+        override fun onScroll(view: AbsListView?, firstVisibleItem: Int,
+                              visibleItemCount: Int, totalItemCount: Int) {
+            if (!isLoadingNewMessages &&  (firstVisibleItem + visibleItemCount == totalItemCount)) {
+                isLoadingNewMessages = true
+                usecase.getMessageFromChat(currentChat, numberMessageOnPage, numberLastMessage) {messages ->
+                    numberLastMessage += numberMessageOnPage
+                    isLoadingNewMessages = false
+                    listMessageAdapter.addAll(messages)
+                }
+
             }
         }
 

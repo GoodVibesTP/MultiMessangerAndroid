@@ -93,7 +93,6 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(applicationContext, "Clicked home", Toast.LENGTH_LONG).show()
                 }
                 R.id.nav_settings -> {
-                    Toast.makeText(applicationContext, "Clicked settings", Toast.LENGTH_LONG).show()
                     val intent = Intent(this, AuthorizationActivity::class.java)
                     startActivity(intent)
                 }
@@ -238,6 +237,5 @@ class MainActivity : AppCompatActivity() {
 
             }
         }
-
     }
 }

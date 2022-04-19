@@ -6,4 +6,8 @@
         <item name="actionModeBackground">@color/main_color</item>
         <item name="android:colorPrimaryDark">@color/main_color</item>
     </style>
+    <style name="PurpleButton" parent="@style/Widget.AppCompat.Button.Colored">
+        <item name="colorButtonNormal">@color/main_color</item>
+        <item name="colorControlHighlight">@color/main_color</item>
+    </style>
 </resources>

@@ -12,8 +12,8 @@
 
     <item
             android:id="@+id/nav_settings"
-            android:icon="@drawable/ic_baseline_home_24"
-            android:title="home"
+            android:icon="@drawable/ic_baseline_login_24"
+            android:title="Authorization"
             />
 
     <item
