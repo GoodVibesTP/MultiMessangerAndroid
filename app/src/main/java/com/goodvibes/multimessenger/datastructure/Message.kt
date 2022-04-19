@@ -1,4 +1,5 @@
 package com.goodvibes.multimessenger.datastructure
+
 import java.io.Serializable
 
 const val idMessageDefault = 0L

@@ -19,8 +19,9 @@ object Telegram : Messenger {
     override val messenger = Messengers.TELEGRAM
 
     private lateinit var activity: AppCompatActivity
+    private var currentUserId: Long = 0L
 
-    fun initClientWithActivity(activity: AppCompatActivity) {
+    fun init(activity: AppCompatActivity) {
         this.activity = activity
         client = Client.create(
             UpdateHandler(),
@@ -87,6 +88,12 @@ object Telegram : Messenger {
                 }
             },
             date = message.date,
+            isMyMessage = when(message.senderId.constructor) {
+                TdApi.MessageSenderUser.CONSTRUCTOR -> {
+                    (message.senderId as TdApi.MessageSenderUser).userId == currentUserId
+                }
+                else -> false
+            },
             fwdMessages = null,
             replyTo = null,
             messenger = Messengers.TELEGRAM
@@ -194,7 +201,7 @@ object Telegram : Messenger {
                     false
                 )
             ),
-            CallbackHandler(callback)
+            SendMessageResultHandler(callback)
         )
     }
 
@@ -311,6 +318,12 @@ object Telegram : Messenger {
                 } finally {
                     authorizationLock.unlock()
                 }
+                client.send(
+                    TdApi.GetMe(),
+                    GetMeResultHandler {
+                        currentUserId = it.id
+                    }
+                )
             }
             TdApi.AuthorizationStateLoggingOut.CONSTRUCTOR -> {
                 Log.d(LOG_TAG, "onAuthorizationStateUpdated -> AuthorizationStateLoggingOut")
@@ -343,7 +356,7 @@ object Telegram : Messenger {
         }
     }
 
-    class CallbackHandler<T>(
+    private class CallbackHandler<T>(
         val callback: (T) -> Unit
     ) : Client.ResultHandler {
         override fun onResult(tdObject: TdApi.Object) {
@@ -374,16 +387,24 @@ object Telegram : Messenger {
         }
     }
 
-    class SendMessageResultHandler(
-        val callback: (Message) -> Unit
+    private class SendMessageResultHandler(
+        val callback: (Long) -> Unit
     ) : Client.ResultHandler {
         override fun onResult(tdObject: TdApi.Object) {
             val sentMessage = (tdObject as TdApi.Message)
-            callback(toDefaultMessage(sentMessage))
+            callback(toDefaultMessage(sentMessage).id)
         }
     }
 
-    class UpdateHandler : Client.ResultHandler {
+    private class GetMeResultHandler(
+        val callback: (TdApi.User) -> Unit
+    ) : Client.ResultHandler {
+        override fun onResult(tdObject: TdApi.Object) {
+            callback((tdObject as TdApi.User))
+        }
+    }
+
+    private class UpdateHandler : Client.ResultHandler {
         override fun onResult(tdObject: TdApi.Object) {
             when (tdObject.constructor) {
                 TdApi.UpdateAuthorizationState.CONSTRUCTOR -> {
@@ -442,10 +463,6 @@ object Telegram : Messenger {
                             chat.lastMessage = updateChat.lastMessage
                         }
                     }
-
-//                    for (chat in chats) {
-//                        Log.d(LOG_TAG, chat.toString())
-//                    }
                 }
                 TdApi.UpdateChatPosition.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateChatPosition")

@@ -6,13 +6,13 @@ data class VKMessagesMessage(
     @SerializedName("date")
     val date: Int,
     @SerializedName("from_id")
-    val fromId: Int, // UserId
+    val fromId: Long, // UserId
     @SerializedName("id")
-    val id: Int,
+    val id: Long,
 //    @SerializedName("out")
 //    val out: BaseBoolInt,
     @SerializedName("peer_id")
-    val peerId: Int,
+    val peerId: Long,
     @SerializedName("text")
     val text: String,
     @SerializedName("attachments")

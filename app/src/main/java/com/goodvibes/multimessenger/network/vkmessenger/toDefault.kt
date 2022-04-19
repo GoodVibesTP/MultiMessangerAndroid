@@ -9,7 +9,8 @@ import com.goodvibes.multimessenger.network.vkmessenger.dto.*
 
 fun toDefaultChat(
     conversationWithMessage: VKMessagesConversationWithMessage,
-    response: VKMessagesGetConversationsResponse
+    response: VKMessagesGetConversationsResponse,
+    currentUserId: Long
 ) : Chat {
     return Chat(
         chatId = conversationWithMessage.conversation.peer.id.toLong(),
@@ -57,17 +58,18 @@ fun toDefaultChat(
             else -> ChatType.OTHER
         },
         messenger = Messengers.VK,
-        lastMessage = toDefaultMessage(conversationWithMessage.lastMessage)
+        lastMessage = toDefaultMessage(conversationWithMessage.lastMessage, currentUserId)
     )
 }
 
 
 fun toDefaultChat(
     conversationWithMessage: VKMessagesConversationWithMessage,
-    response: VKMessagesGetConversationsByIdResponse
+    response: VKMessagesGetConversationsByIdResponse,
+    currentUserId: Long
 ) : Chat {
     return Chat(
-        chatId = conversationWithMessage.conversation.peer.id.toLong(),
+        chatId = conversationWithMessage.conversation.peer.id,
         img = R.drawable.kotik,
         imgUri = when(conversationWithMessage.conversation.peer.type) {
             VKMessagesConversationPeerType.CHAT -> {
@@ -112,13 +114,14 @@ fun toDefaultChat(
             else -> ChatType.OTHER
         },
         messenger = Messengers.VK,
-        lastMessage = toDefaultMessage(conversationWithMessage.lastMessage)
+        lastMessage = toDefaultMessage(conversationWithMessage.lastMessage, currentUserId)
     )
 }
 
 
 fun toDefaultMessage(
-    message: VKMessagesMessage?
+    message: VKMessagesMessage?,
+    currentUserId: Long
 ) : Message? {
     if (message == null) {
         return null
@@ -128,17 +131,18 @@ fun toDefaultMessage(
         fwdMessages = arrayListOf()
         fwdMessages.ensureCapacity(message.fwdMessages.size)
         for (msg in message.fwdMessages) {
-            fwdMessages.add(toDefaultMessage(msg)!!)
+            fwdMessages.add(toDefaultMessage(msg, currentUserId)!!)
         }
     }
     return Message(
-        id = message.id.toLong(),
-        chatId = message.peerId.toLong(),
-        userId = message.fromId.toLong(),
+        id = message.id,
+        chatId = message.peerId,
+        userId = message.fromId,
         text = message.text,
         date = message.date,
+        isMyMessage = currentUserId == message.fromId,
         fwdMessages = fwdMessages,
-        replyTo = toDefaultMessage(message.replyMessage),
+        replyTo = toDefaultMessage(message.replyMessage, currentUserId),
         messenger = Messengers.VK
     )
 }
