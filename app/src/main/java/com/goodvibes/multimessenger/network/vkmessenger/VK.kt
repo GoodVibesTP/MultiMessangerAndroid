@@ -76,7 +76,7 @@ object VK : Messenger {
 
     override fun getAllChats(
         count: Int,
-        first_msg: Int,
+        first_chat: Int,
         callback: (MutableList<Chat>) -> Unit
     ) {
         val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
@@ -85,7 +85,7 @@ object VK : Messenger {
             = messagesService.getConversations(
             access_token = this.token,
             count = count,
-            offset = first_msg
+            offset = first_chat
         )
 
         callForVKRespond.enqueue(object : Callback<VKRespond<VKMessagesGetConversationsResponse>> {

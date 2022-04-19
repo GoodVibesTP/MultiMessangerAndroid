@@ -37,6 +37,7 @@ class MainActivityUC(_mainActivity: MainActivity, _vkMessenger: VK, _tgMessenger
     }
 
     fun isLogin(): Boolean {
+        return false
         if (vk.isAuthorized()) {
             return true
         }

@@ -13,6 +13,7 @@ import java.io.File
 import java.util.concurrent.locks.Condition
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
+import kotlin.math.min
 
 
 object Telegram : Messenger {
@@ -49,6 +50,15 @@ object Telegram : Messenger {
     } catch (e: UnsatisfiedLinkError) {
         e.printStackTrace()
     }
+
+    private var registeredForUpdates = false
+    private var onEventsCallback: (Event) -> Unit = { }
+
+    lateinit var client: Client
+
+    val contacts = mutableMapOf<Long,TdApi.User>()
+    val chats = mutableMapOf<Long, TdApi.Chat>()
+    var chatsLoaded = false
 
     private fun toDefaultChat(chat: TdApi.Chat): Chat {
         return Chat(
@@ -100,14 +110,6 @@ object Telegram : Messenger {
         )
     }
 
-    private var registeredForUpdates = false
-    private var onEventsCallback: (Event) -> Unit = { }
-
-    lateinit var client: Client
-
-    val contacts = mutableMapOf<Long,TdApi.User>()
-    val chats = mutableMapOf<Long, TdApi.Chat>()
-
     fun sendAuthPhone(phone: String) {
         client.send(
             TdApi.SetAuthenticationPhoneNumber(
@@ -142,14 +144,32 @@ object Telegram : Messenger {
         return haveAuthorization
     }
 
-    override fun getAllChats(count: Int, first_msg: Int, callback: (MutableList<Chat>) -> Unit) {
+    override fun getAllChats(count: Int, first_chat: Int, callback: (MutableList<Chat>) -> Unit) {
+        Log.d("MM_LOG", "getAllChats")
         while(!haveAuthorization) {
         }
         client.send(
-            TdApi.GetChats(null, count),
-            CallbackHandler(callback)
-        )
+            TdApi.GetChats(null, CHATS_LIMIT)
+        ) { tdObject ->
+            when (tdObject.constructor) {
+                TdApi.Chats.CONSTRUCTOR -> {
+                    val chatIds = (tdObject as TdApi.Chats).chatIds
+                    val chatArray = arrayListOf<Chat>()
+                    val limit = min(first_chat + count, chatIds.size)
+                    chatArray.ensureCapacity(limit)
+                    for (i in 0 until limit) {
+                        val telegramNextChat = chats[chatIds[i]]
+                        if (telegramNextChat != null) {
+                            chatArray.add(toDefaultChat(telegramNextChat))
+                        }
+                    }
+                    callback(chatArray)
+                }
+                else -> Log.d(LOG_TAG, "Receive wrong response from TDLib: $tdObject")
+            }
+        }
     }
+
 
     override fun getMessagesFromChat(
         chat_id: Long,
@@ -362,16 +382,16 @@ object Telegram : Messenger {
         override fun onResult(tdObject: TdApi.Object) {
             when(tdObject.constructor) {
                 TdApi.Chats.CONSTRUCTOR -> {
-                    val chatIds = (tdObject as TdApi.Chats).chatIds
-                    val chatArray = arrayListOf<Chat>()
-                    chatArray.ensureCapacity(chatIds.size)
-                    for (chatId in chatIds) {
-                        val telegramNextChat = chats[chatId]
-                        if (telegramNextChat != null) {
-                            chatArray.add(toDefaultChat(telegramNextChat))
-                        }
-                    }
-                    callback(chatArray as T)
+//                    val chatIds = (tdObject as TdApi.Chats).chatIds
+//                    val chatArray = arrayListOf<Chat>()
+//                    chatArray.ensureCapacity(chatIds.size)
+//                    for (chatId in chatIds) {
+//                        val telegramNextChat = chats[chatId]
+//                        if (telegramNextChat != null) {
+//                            chatArray.add(toDefaultChat(telegramNextChat))
+//                        }
+//                    }
+//                    callback(chatArray as T)
                 }
                 TdApi.Messages.CONSTRUCTOR -> {
                     Log.d("MM_LOG", tdObject.toString())
