@@ -13,7 +13,7 @@ class MyDBManager(context: Context) {
         db = myDBHelper.writableDatabase
     }
 
-    fun addChatToDB(title: String, uid: Int) {
+    fun addChatToDB(title: String, uid: Long) {
         val values = ContentValues().apply {
             put(MyDbNameClass.CHATS_TITLE_COLUMN_NAME, title)
             put(MyDbNameClass.CHATS_UID_COLUMN_NAME, uid)
