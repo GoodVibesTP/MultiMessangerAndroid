@@ -52,8 +52,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
-        vk.initClientWithActivity(this)
-        tg.initClientWithActivity(this)
+        vk.init(this)
+        tg.init(this)
         useCase = MainActivityUC(this, vk, tg)
         activityMainBinding = ActivityMainBinding.inflate(layoutInflater);
         setContentView(activityMainBinding.root)

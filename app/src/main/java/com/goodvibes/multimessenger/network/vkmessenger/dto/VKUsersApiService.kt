@@ -11,4 +11,10 @@ interface VKUsersApiService {
         @Query("user_ids") user_ids: String,
         @Query("fields") fields: String
     ): Call<VKRespond<List<VKUserFull>>>
+
+    @GET("method/users.get?v=5.131")
+    fun get(
+        @Query("access_token") access_token: String,
+        @Query("fields") fields: String
+    ): Call<VKRespond<List<VKUserFull>>>
 }

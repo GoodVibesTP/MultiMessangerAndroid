@@ -6,7 +6,7 @@ data class VKMessagesConversation(
     @SerializedName("peer")
     val peer: VKMessagesConversationPeer,
     @SerializedName("last_message_id")
-    val lastMessageId: Int,
+    val lastMessageId: Long,
     @SerializedName("chat_settings")
     val chatSettings: VKMessagesChatSettings
 )
