@@ -37,9 +37,20 @@ class ChatActivity : AppCompatActivity() {
         activityChatBinding.chatBtnSendMessage.setOnClickListener{
             val messageString = activityChatBinding.chatInputMessage.text.toString()
             if(!messageString.isEmpty()) {
-                val message = Message(text=messageString, chatId = currentChat.chatId, messenger = currentChat.messenger)
-                usecase.sendMessage(message) {
-                    listMessage.add(message)
+                val message = Message(
+                    text = messageString,
+                    chatId = currentChat.chatId,
+                    isMyMessage = true,
+                    messenger = currentChat.messenger
+                )
+                usecase.sendMessage(message) { message_id ->
+                    message.id = message_id
+                    GlobalScope.launch(Dispatchers.Main) {
+                        listMessage.add(message)
+                        listMessageAdapter.notifyDataSetChanged()
+
+                        activityChatBinding.chatInputMessage.text.clear()
+                    }
                 }
             }
         }
@@ -50,11 +61,13 @@ class ChatActivity : AppCompatActivity() {
 
     fun initListMessage() {
         listMessage = mutableListOf()
+        listMessageAdapter = ListSingleChatAdapter(this@ChatActivity, listMessage);
+        activityChatBinding.listMessage.setAdapter(listMessageAdapter)
         usecase.getMessageFromChat(currentChat, 50) { messages ->
             GlobalScope.launch(Dispatchers.Main) {
                 listMessage.addAll(messages)
-                listMessageAdapter = ListSingleChatAdapter(this@ChatActivity, listMessage);
-                activityChatBinding.listMessage.setAdapter(listMessageAdapter);
+                listMessage.sortBy { message -> message.date }
+                listMessageAdapter.notifyDataSetChanged()
             }
         }
 

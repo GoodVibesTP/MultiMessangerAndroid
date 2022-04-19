@@ -1,15 +1,19 @@
 package com.goodvibes.multimessenger.network.tgmessenger
 
+import android.annotation.SuppressLint
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.goodvibes.multimessenger.R
 import com.goodvibes.multimessenger.datastructure.*
 import com.goodvibes.multimessenger.network.Messenger
+import com.goodvibes.multimessenger.network.vkmessenger.VK
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.drinkless.td.libcore.telegram.Client
 import org.drinkless.td.libcore.telegram.TdApi
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.*
 import java.util.concurrent.locks.Condition
 import java.util.concurrent.locks.Lock
 import java.util.concurrent.locks.ReentrantLock
@@ -54,11 +58,14 @@ object Telegram : Messenger {
     private var registeredForUpdates = false
     private var onEventsCallback: (Event) -> Unit = { }
 
-    lateinit var client: Client
+    private lateinit var client: Client
 
-    val contacts = mutableMapOf<Long,TdApi.User>()
-    val chats = mutableMapOf<Long, TdApi.Chat>()
-    var chatsLoaded = false
+    private val contacts = mutableMapOf<Long,TdApi.User>()
+    private val chats = mutableMapOf<Long, TdApi.Chat>()
+    private var chatsLoaded = false
+
+    @SuppressLint("SimpleDateFormat")
+    private val dateFormat = SimpleDateFormat("dd/M/yyyy HH:mm:ss", Locale("ru", "ru"))
 
     private fun toDefaultChat(chat: TdApi.Chat): Chat {
         return Chat(
@@ -98,6 +105,7 @@ object Telegram : Messenger {
                 }
             },
             date = message.date,
+            time = dateFormat.format(message.date * 1000L),
             isMyMessage = when(message.senderId.constructor) {
                 TdApi.MessageSenderUser.CONSTRUCTOR -> {
                     (message.senderId as TdApi.MessageSenderUser).userId == currentUserId
@@ -142,6 +150,10 @@ object Telegram : Messenger {
 
     override fun isAuthorized(): Boolean {
         return haveAuthorization
+    }
+
+    override fun getUserId(): Long {
+        return currentUserId
     }
 
     override fun getAllChats(count: Int, first_chat: Int, callback: (MutableList<Chat>) -> Unit) {

@@ -10,6 +10,8 @@ interface Messenger {
 
     fun isAuthorized(): Boolean
 
+    fun getUserId(): Long
+
     fun getAllChats(
         count: Int,
         first_chat: Int = 0,

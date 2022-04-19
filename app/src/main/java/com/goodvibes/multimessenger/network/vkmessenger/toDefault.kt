@@ -1,11 +1,19 @@
 package com.goodvibes.multimessenger.network.vkmessenger
 
+import android.annotation.SuppressLint
 import com.goodvibes.multimessenger.R
 import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.ChatType
 import com.goodvibes.multimessenger.datastructure.Message
 import com.goodvibes.multimessenger.datastructure.Messengers
+import com.goodvibes.multimessenger.network.tgmessenger.Telegram
 import com.goodvibes.multimessenger.network.vkmessenger.dto.*
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlin.collections.ArrayList
+
+@SuppressLint("SimpleDateFormat")
+private val dateFormat = SimpleDateFormat("dd/M/yyyy HH:mm:ss", Locale("ru", "ru"))
 
 fun toDefaultChat(
     conversationWithMessage: VKMessagesConversationWithMessage,
@@ -140,6 +148,7 @@ fun toDefaultMessage(
         userId = message.fromId,
         text = message.text,
         date = message.date,
+        time = dateFormat.format(message.date * 1000L),
         isMyMessage = currentUserId == message.fromId,
         fwdMessages = fwdMessages,
         replyTo = toDefaultMessage(message.replyMessage, currentUserId),
