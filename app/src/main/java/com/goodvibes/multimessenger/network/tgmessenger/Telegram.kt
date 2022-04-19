@@ -149,7 +149,7 @@ object Telegram : Messenger {
         while(!haveAuthorization) {
         }
         client.send(
-            TdApi.GetChats(null, CHATS_LIMIT)
+            TdApi.GetChats(null, count)
         ) { tdObject ->
             when (tdObject.constructor) {
                 TdApi.Chats.CONSTRUCTOR -> {
