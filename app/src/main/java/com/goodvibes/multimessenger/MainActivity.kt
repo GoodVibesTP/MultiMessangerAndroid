@@ -1,13 +1,11 @@
 package com.goodvibes.multimessenger
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
-import android.view.ActionMode
-import android.view.Menu
-import android.view.MenuItem
-import android.view.View
+import android.view.*
 import android.widget.AbsListView
 import android.widget.AbsListView.OnScrollListener
 import android.widget.AdapterView
@@ -20,10 +18,7 @@ import androidx.appcompat.widget.Toolbar
 import androidx.drawerlayout.widget.DrawerLayout
 import com.example.testdb3.db.MyDBManager
 import com.goodvibes.multimessenger.databinding.ActivityMainBinding
-import com.goodvibes.multimessenger.datastructure.Chat
-import com.goodvibes.multimessenger.datastructure.Event
-import com.goodvibes.multimessenger.datastructure.Folder
-import com.goodvibes.multimessenger.datastructure.idAllFolder
+import com.goodvibes.multimessenger.datastructure.*
 import com.goodvibes.multimessenger.dialog.SelectFolder
 import com.goodvibes.multimessenger.network.tgmessenger.Telegram
 import com.goodvibes.multimessenger.network.vkmessenger.VK
@@ -55,6 +50,7 @@ class MainActivity : AppCompatActivity() {
 
     var allChats: MutableList<Chat> = mutableListOf()
 
+    @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
         vk.init(this)
@@ -67,6 +63,11 @@ class MainActivity : AppCompatActivity() {
            val intent = Intent(this, AuthorizationActivity::class.java)
            startActivity(intent)
        }
+
+        // TODO:
+        myDbManager.openDb()
+        myDbManager.addFolderToDB("VK", -3)
+        myDbManager.addFolderToDB("TELEGRAM", -2)
 
         initMenu()
         initChatsAllAdapter()
@@ -108,6 +109,7 @@ class MainActivity : AppCompatActivity() {
     }
 
 //TODO: ТУТ ОПРЕДЕЛЕННО НУЖНО ВЫНЕСТИ В ФУНКЦИЮ ИНИН КАЛЛБЭКА
+    @SuppressLint("ClickableViewAccessibility")
     @RequiresApi(Build.VERSION_CODES.M)
     private fun initChatsAllAdapter() {
     allChats = mutableListOf()
@@ -139,19 +141,70 @@ class MainActivity : AppCompatActivity() {
                 myDbManager.openDb()
                 for (item in chats) {
                     myDbManager.addChatToDB(item.title, item.chatId)
+                    var folderUID = 0
+                    if (item.messenger == Messengers.VK) {
+                        folderUID = -3
+                    } else if (item.messenger == Messengers.TELEGRAM) {
+                        folderUID = -2
+                    }
+
+                    myDbManager.addChatToFolder(item.chatId, folderUID)
                     Log.d("low", "Successfully add new chat: ${item.title}!")
                 }
 
-                val options = arrayOf("Папка 1", "Папка 2", "Папка 3")
-                activityMainBinding.include.spOption.adapter = ArrayAdapter<String>(this@MainActivity, android.R.layout.simple_list_item_1, options)
+               // val folders = myDbManager.getFolders()
+
+//                activityMainBinding.include.spOption.setOnTouchListener(
+//                    View.OnTouchListener { view, motionEvent ->
+//                        when (motionEvent.action){
+//                            MotionEvent.ACTION_DOWN -> {
+//                                Toast.makeText(this@MainActivity, "DOWN1", Toast.LENGTH_LONG).show()
+//                            }
+//                            MotionEvent.ACTION_UP -> {
+//                                Toast.makeText(this@MainActivity, "UP1", Toast.LENGTH_LONG).show()
+//                            }
+//                        }
+//                        return@OnTouchListener true
+//                    }
+//                )
+
+                val getFolder = myDbManager.getFolders()
+
+                val options: ArrayList<String> = getFolder
+                var adapter = ArrayAdapter<String>(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, options)
+                activityMainBinding.include.spOption.adapter = adapter
 
                 activityMainBinding.include.spOption.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
                     override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
-                        val options = arrayOf("Папка 1", "Папка 2", "Папка 3")
-                        activityMainBinding.include.optionName.text = options.get(p2)
+                        // val options = arrayOf("Папка 1", "Папка 2", "Папка 3")
+                      //  Toast.makeText(this@MainActivity, "DOWN", Toast.LENGTH_LONG).show()
+                        //activityMainBinding.include.optionName.text = options.get(p2)
+                        adapter = ArrayAdapter<String>(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, myDbManager.getFolders())
+                        adapter.notifyDataSetChanged()
+
+                        val folderUID = myDbManager.getFolderUIDByName(options.get(p2))
+                        val chatsDB = myDbManager.getChatsByFolder(folderUID)
+
+                        val tempChats : MutableList<Chat> = mutableListOf()
+
+                        for (item in chatsDB) {
+                            for (chat in allChats) {
+                                if (chat.chatId == item) {
+                                    tempChats.add(chat)
+                                }
+                            }
+                        }
+
+                        // listChatsAdapter.notifyDataSetChanged()
+                        listChatsAdapter.clear()
+                        numberLastChatVK = tempChats.size
+                        listChatsAdapter.addAll(tempChats)
+                        currentFolder.folderId = folderUID
+
                     }
 
                     override fun onNothingSelected(p0: AdapterView<*>?) {
+                       // Toast.makeText(this@MainActivity, "UP", Toast.LENGTH_LONG).show()
                         activityMainBinding.include.optionName.text = "Выберите папку"
                     }
 
@@ -258,15 +311,41 @@ class MainActivity : AppCompatActivity() {
             if (!isLoadingChatVK &&  (firstVisibleItem + visibleItemCount == totalItemCount)) {
                 isLoadingChatVK = true
                 useCase.getAllChats(numberChatOnPage, numberLastChatVK) {chats ->
-                    numberLastChatVK += numberChatOnPage
+
                     isLoadingChatVK = false
-                    listChatsAdapter.addAll(chats)
+
+                    // TODO: comment lower
 
                     myDbManager.openDb()
                     for (item in chats) {
                         myDbManager.addChatToDB(item.title, item.chatId)
+                        var folderUID = 0
+                        if (item.messenger == Messengers.VK) {
+                            folderUID = -3
+                        } else if (item.messenger == Messengers.TELEGRAM) {
+                            folderUID = -2
+                        }
+
+                        myDbManager.addChatToFolder(item.chatId, folderUID)
                         Log.d("low", "Successfully add new chat: ${item.title}!")
                     }
+                        // TODO: get folder of chat from db item.folder = chatdb.folder
+
+                        val chatsDB = myDbManager.getChatsByFolder(currentFolder.folderId)
+
+                        val tempChats : MutableList<Chat> = mutableListOf()
+
+                        for (item in chatsDB) {
+                            for (chat in chats) {
+                                if (chat.chatId == item) {
+                                    tempChats.add(chat)
+                                }
+                            }
+                        }
+
+                        listChatsAdapter.addAll(tempChats)
+                        numberLastChatVK += tempChats.size
+
                 }
 
             }

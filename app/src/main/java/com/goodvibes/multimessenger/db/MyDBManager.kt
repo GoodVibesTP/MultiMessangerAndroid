@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.ContentValues
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
+import com.goodvibes.multimessenger.datastructure.Chat
 
 class MyDBManager(context: Context) {
     val myDBHelper = MyDBHelper(context)
@@ -29,7 +30,7 @@ class MyDBManager(context: Context) {
         db?.insert(MyDbNameClass.FOLDERS_TABLE_NAME, null, values)
     }
 
-    fun addChatToFolder(chatID: Int, folderID: Int) {
+    fun addChatToFolder(chatID: Long, folderID: Int) {
         val values = ContentValues().apply {
             put(MyDbNameClass.FOLDERS_SHARING_FOLDER_ID_COLUMN_NAME, folderID)
             put(MyDbNameClass.FOLDERS_SHARING_CHAT_ID_COLUMN_NAME, chatID)
@@ -97,6 +98,56 @@ class MyDBManager(context: Context) {
 
         return data
     }
+
+
+    @SuppressLint("Range")
+    fun getFolderUIDByName(title: String): Int {
+        var folderUID = 0
+        val cursor = db?.query(
+            MyDbNameClass.FOLDERS_TABLE_NAME,   // The table to query
+            null,             // The array of columns to return (pass null to get all)
+            "${MyDbNameClass.FOLDERS_TITLE_COLUMN_NAME} = ?",              // The columns for the WHERE clause
+            arrayOf(title),          // The values for the WHERE clause
+            null,                   // don't group the rows
+            null,                   // don't filter by row groups
+            null               // The sort order
+        )
+
+        while(cursor?.moveToNext()!!) {
+            folderUID = cursor.getInt(
+                cursor.getColumnIndex(MyDbNameClass.FOLDERS_UID_COLUMN_NAME))
+        }
+
+        cursor.close()
+
+        return folderUID
+    }
+
+
+    @SuppressLint("Range")
+    fun getChatsByFolder(uid: Int): MutableList<Long> {
+        var chatUIDs = mutableListOf<Long>()
+        val cursor = db?.query(
+            MyDbNameClass.FOLDERS_SHARING_TABLE_NAME,   // The table to query
+            null,             // The array of columns to return (pass null to get all)
+            "${MyDbNameClass.FOLDERS_SHARING_FOLDER_ID_COLUMN_NAME} = ?",              // The columns for the WHERE clause
+            arrayOf(uid.toString()),          // The values for the WHERE clause
+            null,                   // don't group the rows
+            null,                   // don't filter by row groups
+            null               // The sort order
+        )
+
+        while(cursor?.moveToNext()!!) {
+            val chatUID = cursor.getLong(
+                cursor.getColumnIndex(MyDbNameClass.FOLDERS_SHARING_CHAT_ID_COLUMN_NAME))
+            chatUIDs.add(chatUID)
+        }
+
+        cursor.close()
+
+        return chatUIDs
+    }
+
 
     fun closeDB() {
         myDBHelper.close()
