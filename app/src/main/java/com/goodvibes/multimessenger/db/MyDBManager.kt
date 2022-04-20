@@ -29,7 +29,7 @@ class MyDBManager(context: Context) {
         db?.insert(MyDbNameClass.FOLDERS_TABLE_NAME, null, values)
     }
 
-    fun addChatToFolder(chatID: Int, folderID: Int) {
+    fun addChatToFolder(chatID: Long, folderID: Int) {
         val values = ContentValues().apply {
             put(MyDbNameClass.FOLDERS_SHARING_FOLDER_ID_COLUMN_NAME, folderID)
             put(MyDbNameClass.FOLDERS_SHARING_CHAT_ID_COLUMN_NAME, chatID)

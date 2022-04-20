@@ -17,10 +17,7 @@ import androidx.appcompat.widget.Toolbar
 import androidx.drawerlayout.widget.DrawerLayout
 import com.example.testdb3.db.MyDBManager
 import com.goodvibes.multimessenger.databinding.ActivityMainBinding
-import com.goodvibes.multimessenger.datastructure.Chat
-import com.goodvibes.multimessenger.datastructure.Event
-import com.goodvibes.multimessenger.datastructure.Folder
-import com.goodvibes.multimessenger.datastructure.idAllFolder
+import com.goodvibes.multimessenger.datastructure.*
 import com.goodvibes.multimessenger.dialog.SelectFolder
 import com.goodvibes.multimessenger.network.tgmessenger.Telegram
 import com.goodvibes.multimessenger.network.vkmessenger.VK
@@ -64,6 +61,10 @@ class MainActivity : AppCompatActivity() {
            val intent = Intent(this, AuthorizationActivity::class.java)
            startActivity(intent)
        }
+
+        myDbManager.openDb()
+        myDbManager.addFolderToDB("VK", -3)
+        myDbManager.addFolderToDB("TELEGRAM", -2)
 
         initMenu()
         initChatsAllAdapter()
@@ -136,6 +137,14 @@ class MainActivity : AppCompatActivity() {
                 myDbManager.openDb()
                 for (item in chats) {
                     myDbManager.addChatToDB(item.title, item.chatId)
+                    var folderUID = 0
+                    if (item.messenger == Messengers.VK) {
+                        folderUID = -3
+                    } else if (item.messenger == Messengers.TELEGRAM) {
+                        folderUID = -2
+                    }
+
+                    myDbManager.addChatToFolder(item.chatId, folderUID)
                     Log.d("low", "Successfully add new chat: ${item.title}!")
                 }
             }
@@ -245,6 +254,14 @@ class MainActivity : AppCompatActivity() {
                     myDbManager.openDb()
                     for (item in chats) {
                         myDbManager.addChatToDB(item.title, item.chatId)
+                        var folderUID = 0
+                        if (item.messenger == Messengers.VK) {
+                            folderUID = -3
+                        } else if (item.messenger == Messengers.TELEGRAM) {
+                            folderUID = -2
+                        }
+
+                        myDbManager.addChatToFolder(item.chatId, folderUID)
                         Log.d("low", "Successfully add new chat: ${item.title}!")
                     }
                 }
