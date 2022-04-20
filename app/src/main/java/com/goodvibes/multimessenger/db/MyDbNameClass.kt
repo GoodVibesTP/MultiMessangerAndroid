@@ -42,3 +42,8 @@ object MyDbNameClass : BaseColumns {
     const val DELETE_TABLE_FOLDERS = "DROP TABLE IF EXISTS ${FOLDERS_TABLE_NAME}"
     const val DELETE_TABLE_FOLDERS_SHARING = "DROP TABLE IF EXISTS ${FOLDERS_SHARING_TABLE_NAME}"
 }
+
+object DBConst {
+    const val RANDOM_START = 1000
+    const val RANDOM_END = 1000000000
+}

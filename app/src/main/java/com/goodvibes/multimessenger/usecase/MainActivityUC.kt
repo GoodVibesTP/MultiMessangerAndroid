@@ -1,18 +1,24 @@
 package com.goodvibes.multimessenger.usecase
 import android.widget.Toast
+import com.example.testdb3.db.DBConst
+import com.example.testdb3.db.DBConst.RANDOM_END
+import com.example.testdb3.db.DBConst.RANDOM_START
 import com.goodvibes.multimessenger.MainActivity
 import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.Folder
 import com.goodvibes.multimessenger.datastructure.idTGFolder
 import com.goodvibes.multimessenger.datastructure.idVKFolder
+import com.goodvibes.multimessenger.db.MyDBUseCase
 import com.goodvibes.multimessenger.network.Messenger
 import com.goodvibes.multimessenger.network.tgmessenger.Telegram
 import com.goodvibes.multimessenger.network.vkmessenger.VK
+import java.util.*
 
-class MainActivityUC(_mainActivity: MainActivity, _vkMessenger: VK, _tgMessenger: Telegram) {
+class MainActivityUC(_mainActivity: MainActivity, _vkMessenger: VK, _tgMessenger: Telegram, _dbUseCase: MyDBUseCase) {
     private val mainActivity = _mainActivity
     private val vk = _vkMessenger
     private val tg = _tgMessenger
+    private val dbUseCase = _dbUseCase
 
     fun getAllChats(
         count: Int,
@@ -69,6 +75,9 @@ class MainActivityUC(_mainActivity: MainActivity, _vkMessenger: VK, _tgMessenger
     }
 
     fun addFolder(chat: Chat) {
+        val uniqueID = (RANDOM_START..RANDOM_END).random()
+        dbUseCase.dbManager.addFolderToDB( chat.folder.name ,uniqueID)
+        dbUseCase.dbManager.addChatToFolder(chat.chatId, uniqueID)
         Toast.makeText(mainActivity, "Create folder " + chat.folder.name + " for chat " + chat.title, Toast.LENGTH_LONG).show()
     }
 

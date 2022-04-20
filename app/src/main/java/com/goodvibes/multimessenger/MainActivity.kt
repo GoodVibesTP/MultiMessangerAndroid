@@ -57,7 +57,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState);
         vk.init(this)
         tg.init(this)
-        useCase = MainActivityUC(this, vk, tg)
+        useCase = MainActivityUC(this, vk, tg, dbUseCase)
         activityMainBinding = ActivityMainBinding.inflate(layoutInflater);
         setContentView(activityMainBinding.root)
 
