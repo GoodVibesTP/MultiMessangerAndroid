@@ -82,6 +82,8 @@ class MainActivityUC(_mainActivity: MainActivity, _vkMessenger: VK, _tgMessenger
     }
 
     fun moveChatToFolder(chat: Chat) {
+        val folderUID = dbUseCase.dbManager.getFolderByName(chat.folder.name)
+        dbUseCase.dbManager.addChatToFolder(chat.chatId, folderUID)
         Toast.makeText(mainActivity, chat.title + " to folder " + chat.folder.name, Toast.LENGTH_LONG).show()
     }
 
