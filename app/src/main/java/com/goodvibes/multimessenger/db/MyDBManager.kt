@@ -98,6 +98,30 @@ class MyDBManager(context: Context) {
         return data
     }
 
+    @SuppressLint("Range")
+    fun getFolderByName(name: String): Int {
+        var data = 0
+
+        val cursor = db?.query(
+            MyDbNameClass.FOLDERS_TABLE_NAME,   // The table to query
+            null,             // The array of columns to return (pass null to get all)
+            "${MyDbNameClass.FOLDERS_TITLE_COLUMN_NAME} = ?",              // The columns for the WHERE clause
+            arrayOf(name),          // The values for the WHERE clause
+            null,                   // don't group the rows
+            null,                   // don't filter by row groups
+            null               // The sort order
+        )
+
+        while(cursor?.moveToNext()!!) {
+            data = cursor.getInt(
+                cursor.getColumnIndex(MyDbNameClass.FOLDERS_UID_COLUMN_NAME))
+        }
+
+        cursor.close()
+
+        return data
+    }
+
     fun closeDB() {
         myDBHelper.close()
     }

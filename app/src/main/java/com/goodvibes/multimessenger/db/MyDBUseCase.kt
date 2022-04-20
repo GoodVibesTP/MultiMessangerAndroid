@@ -8,7 +8,7 @@ import com.goodvibes.multimessenger.datastructure.Messengers
 class MyDBUseCase(val dbManager: MyDBManager) {
     fun addPrimaryFolders() {
         dbManager.addFolderToDB("VK", -3)
-        dbManager.addFolderToDB("TELEGRAM", -2)
+        dbManager.addFolderToDB("Telegram", -2)
     }
 
     fun addChatsToPrimaryFolderIfNotExist(chat: Chat) {
