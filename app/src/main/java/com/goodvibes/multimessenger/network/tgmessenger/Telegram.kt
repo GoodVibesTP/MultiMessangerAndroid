@@ -7,6 +7,7 @@ import com.goodvibes.multimessenger.R
 import com.goodvibes.multimessenger.datastructure.*
 import com.goodvibes.multimessenger.network.Messenger
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.drinkless.td.libcore.telegram.Client
 import org.drinkless.td.libcore.telegram.TdApi
@@ -157,28 +158,34 @@ object Telegram : Messenger {
 
     override fun getAllChats(count: Int, first_chat: Int, callback: (MutableList<Chat>) -> Unit) {
         Log.d("MM_LOG", "getAllChats")
-        if (haveAuthorization) {
-            client.send(
-                TdApi.GetChats(null, count + first_chat)
-            ) { tdObject ->
-                when (tdObject.constructor) {
-                    TdApi.Chats.CONSTRUCTOR -> {
-                        val chatIds = (tdObject as TdApi.Chats).chatIds
-                        val chatArray = arrayListOf<Chat>()
-                        val limit = min(first_chat + count, chatIds.size)
-                        chatArray.ensureCapacity(limit)
-                        for (i in first_chat..limit - 1) {
-                            val telegramNextChat = chats[chatIds[i]]
-                            if (telegramNextChat != null) {
-                                chatArray.add(toDefaultChat(telegramNextChat))
+        GlobalScope.launch {
+            if (!haveAuthorization) {
+                delay(1000)
+            }
+            if (haveAuthorization) {
+                client.send(
+                    TdApi.GetChats(null, count + first_chat)
+                ) { tdObject ->
+                    when (tdObject.constructor) {
+                        TdApi.Chats.CONSTRUCTOR -> {
+                            val chatIds = (tdObject as TdApi.Chats).chatIds
+                            val chatArray = arrayListOf<Chat>()
+                            val limit = min(first_chat + count, chatIds.size)
+                            chatArray.ensureCapacity(limit)
+                            for (i in first_chat..limit - 1) {
+                                val telegramNextChat = chats[chatIds[i]]
+                                if (telegramNextChat != null) {
+                                    chatArray.add(toDefaultChat(telegramNextChat))
+                                }
                             }
+                            callback(chatArray)
                         }
-                        callback(chatArray)
+                        else -> Log.d(LOG_TAG, "Receive wrong response from TDLib: $tdObject")
                     }
-                    else -> Log.d(LOG_TAG, "Receive wrong response from TDLib: $tdObject")
                 }
             }
         }
+
     }
 
 
@@ -240,9 +247,7 @@ object Telegram : Messenger {
         chat_id: Long,
         callback: (Chat) -> Unit
     ) {
-        GlobalScope.launch {
-            while (!haveAuthorization) {
-            }
+        if (haveAuthorization) {
             Log.d(LOG_TAG, "getChatById, ${chats[chat_id]}")
             Log.d(LOG_TAG, chats.toString())
             if (chats[chat_id] != null) {

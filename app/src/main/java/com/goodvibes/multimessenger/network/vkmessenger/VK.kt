@@ -1,5 +1,6 @@
 package com.goodvibes.multimessenger.network.vkmessenger
 
+import android.annotation.SuppressLint
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.goodvibes.multimessenger.datastructure.Chat
@@ -19,11 +20,16 @@ import retrofit2.Callback
 import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.text.SimpleDateFormat
+import java.util.*
 import kotlin.math.roundToInt
 
 
 object VK : Messenger {
     override val messenger = Messengers.VK
+
+    @SuppressLint("SimpleDateFormat")
+    val dateFormat = SimpleDateFormat("dd/M/yyyy HH:mm:ss", Locale("ru", "ru"))
 
     private lateinit var activity: AppCompatActivity
 
@@ -39,7 +45,8 @@ object VK : Messenger {
 
     private val vkClient = OriginalVKClient
 
-    private var token = "8b5450a98b993ee0290ce1ae1668e0e0a703716db2d49330a42eaf4802d1fec8952345adafb2bb15ac199"
+    private var token = "9344d5de74ceb93309d46178a21cf650cc0645cf733064fa46ba65bb19a9f31f973884e139a28569d5647"
+
 
     private val permissions = arrayListOf<VKScope>()
 
@@ -529,13 +536,16 @@ object VK : Messenger {
                                                     "but isJsonObject = false")
                                         }
                                     }
+                                    val datetime = (System.currentTimeMillis() / 1000L).toInt()
                                     Event.NewMessage(
                                         message = Message(
                                             id = updateItem[VK_UPDATE.NEW_MESSAGE.MESSAGE_ID].asLong,
                                             chatId = updateItem[VK_UPDATE.NEW_MESSAGE.MINOR_ID].asLong,
                                             userId = updateItem[VK_UPDATE.NEW_MESSAGE.MINOR_ID].asLong,
                                             text = updateItem[VK_UPDATE.NEW_MESSAGE.TEXT].asString,
-                                            date = (System.currentTimeMillis() / 1000L).toInt(),
+                                            isMyMessage = updateItem[VK_UPDATE.NEW_MESSAGE.FLAGS].asInt and 2 == 0,
+                                            date = datetime,
+                                            time = dateFormat.format(datetime * 1000L),
                                             fwdMessages = null,
                                             replyTo = null,
                                             messenger = Messengers.VK
