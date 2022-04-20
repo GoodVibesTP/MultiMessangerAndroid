@@ -6,7 +6,6 @@ import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.ChatType
 import com.goodvibes.multimessenger.datastructure.Message
 import com.goodvibes.multimessenger.datastructure.Messengers
-import com.goodvibes.multimessenger.network.tgmessenger.Telegram
 import com.goodvibes.multimessenger.network.vkmessenger.dto.*
 import java.text.SimpleDateFormat
 import java.util.*
@@ -21,8 +20,8 @@ fun toDefaultChat(
     currentUserId: Long
 ) : Chat {
     return Chat(
-        chatId = conversationWithMessage.conversation.peer.id.toLong(),
-        img = R.drawable.kotik,
+        chatId = conversationWithMessage.conversation.peer.id,
+        img = R.mipmap.tg_icon,
         imgUri = when(conversationWithMessage.conversation.peer.type) {
             VKMessagesConversationPeerType.CHAT -> {
                 conversationWithMessage.conversation.chatSettings.photo?.photo200

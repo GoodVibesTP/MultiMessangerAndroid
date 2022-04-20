@@ -74,7 +74,7 @@ class ChatActivity : AppCompatActivity() {
         usecase.getMessageFromChat(currentChat, 50) { messages ->
             GlobalScope.launch(Dispatchers.Main) {
                 listMessageAdapter.addAll(messages)
-                listMessage.sortBy { message -> message.date }
+                // listMessage.sortBy { message -> message.date }
                 listMessageAdapter.notifyDataSetChanged()
             }
         }
@@ -91,7 +91,10 @@ class ChatActivity : AppCompatActivity() {
                 usecase.getMessageFromChat(currentChat, numberMessageOnPage, numberLastMessage) {messages ->
                     numberLastMessage += numberMessageOnPage
                     isLoadingNewMessages = false
-                    listMessageAdapter.addAll(messages)
+                    for (message in messages) {
+                        listMessageAdapter.insert(message, 0)
+                    }
+                    listMessageAdapter.notifyDataSetChanged()
                 }
             }
         }

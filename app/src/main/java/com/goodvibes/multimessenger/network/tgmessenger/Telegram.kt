@@ -6,7 +6,6 @@ import androidx.appcompat.app.AppCompatActivity
 import com.goodvibes.multimessenger.R
 import com.goodvibes.multimessenger.datastructure.*
 import com.goodvibes.multimessenger.network.Messenger
-import com.goodvibes.multimessenger.network.vkmessenger.VK
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.drinkless.td.libcore.telegram.Client
@@ -70,7 +69,7 @@ object Telegram : Messenger {
     private fun toDefaultChat(chat: TdApi.Chat): Chat {
         return Chat(
             chatId = chat.id,
-            img = R.drawable.kotik,
+            img = R.mipmap.tg_icon,
             imgUri = null,
             title = chat.title,
             chatType = ChatType.CHAT,
@@ -158,26 +157,26 @@ object Telegram : Messenger {
 
     override fun getAllChats(count: Int, first_chat: Int, callback: (MutableList<Chat>) -> Unit) {
         Log.d("MM_LOG", "getAllChats")
-        while(!haveAuthorization) {
-        }
-        client.send(
-            TdApi.GetChats(null, count + first_chat)
-        ) { tdObject ->
-            when (tdObject.constructor) {
-                TdApi.Chats.CONSTRUCTOR -> {
-                    val chatIds = (tdObject as TdApi.Chats).chatIds
-                    val chatArray = arrayListOf<Chat>()
-                    val limit = min(first_chat + count, chatIds.size)
-                    chatArray.ensureCapacity(limit)
-                    for (i in first_chat..limit-1) {
-                        val telegramNextChat = chats[chatIds[i]]
-                        if (telegramNextChat != null) {
-                            chatArray.add(toDefaultChat(telegramNextChat))
+        if (haveAuthorization) {
+            client.send(
+                TdApi.GetChats(null, count + first_chat)
+            ) { tdObject ->
+                when (tdObject.constructor) {
+                    TdApi.Chats.CONSTRUCTOR -> {
+                        val chatIds = (tdObject as TdApi.Chats).chatIds
+                        val chatArray = arrayListOf<Chat>()
+                        val limit = min(first_chat + count, chatIds.size)
+                        chatArray.ensureCapacity(limit)
+                        for (i in first_chat..limit - 1) {
+                            val telegramNextChat = chats[chatIds[i]]
+                            if (telegramNextChat != null) {
+                                chatArray.add(toDefaultChat(telegramNextChat))
+                            }
                         }
+                        callback(chatArray)
                     }
-                    callback(chatArray)
+                    else -> Log.d(LOG_TAG, "Receive wrong response from TDLib: $tdObject")
                 }
-                else -> Log.d(LOG_TAG, "Receive wrong response from TDLib: $tdObject")
             }
         }
     }
@@ -189,30 +188,30 @@ object Telegram : Messenger {
         first_msg: Int,
         callback: (MutableList<Message>) -> Unit
     ) {
-        while (!haveAuthorization) {
+        if (haveAuthorization) {
+            Log.d("MM_LOG", "getMessagesFromChat")
+            client.send(
+                TdApi.GetChatHistory(
+                    chat_id,
+                    0,
+                    0,
+                    100,
+                    false
+                ),
+                CallbackHandler<MutableList<Message>> {
+                    client.send(
+                        TdApi.GetChatHistory(
+                            chat_id,
+                            0,
+                            0,
+                            100,
+                            true
+                        ),
+                        CallbackHandler(callback)
+                    )
+                }
+            )
         }
-        Log.d("MM_LOG", "getMessagesFromChat")
-        client.send(
-            TdApi.GetChatHistory(
-                chat_id,
-                0,
-                0,
-                100,
-                false
-            ),
-            CallbackHandler<MutableList<Message>> {
-                client.send(
-                    TdApi.GetChatHistory(
-                        chat_id,
-                        0,
-                        0,
-                        100,
-                        true
-                    ),
-                    CallbackHandler(callback)
-                )
-            }
-        )
     }
 
     override fun sendMessage(
