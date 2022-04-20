@@ -18,6 +18,7 @@ import androidx.drawerlayout.widget.DrawerLayout
 import com.example.testdb3.db.MyDBManager
 import com.goodvibes.multimessenger.databinding.ActivityMainBinding
 import com.goodvibes.multimessenger.datastructure.*
+import com.goodvibes.multimessenger.db.MyDBUseCase
 import com.goodvibes.multimessenger.dialog.SelectFolder
 import com.goodvibes.multimessenger.network.tgmessenger.Telegram
 import com.goodvibes.multimessenger.network.vkmessenger.VK
@@ -37,6 +38,9 @@ class MainActivity : AppCompatActivity() {
     val vk = VK
     val tg = Telegram
     lateinit var listChatsAdapter: ListChatsAdapter
+
+
+    val dbUseCase = MyDBUseCase(myDbManager)
 
 
     private var numberLastChatVK: Int = 0
@@ -63,8 +67,7 @@ class MainActivity : AppCompatActivity() {
        }
 
         myDbManager.openDb()
-        myDbManager.addFolderToDB("VK", -3)
-        myDbManager.addFolderToDB("TELEGRAM", -2)
+        dbUseCase.addPrimaryFolders()
 
         initMenu()
         initChatsAllAdapter()
@@ -134,18 +137,8 @@ class MainActivity : AppCompatActivity() {
                     startActivity(intent)
                 }
 
-                myDbManager.openDb()
                 for (item in chats) {
-                    myDbManager.addChatToDB(item.title, item.chatId)
-                    var folderUID = 0
-                    if (item.messenger == Messengers.VK) {
-                        folderUID = -3
-                    } else if (item.messenger == Messengers.TELEGRAM) {
-                        folderUID = -2
-                    }
-
-                    myDbManager.addChatToFolder(item.chatId, folderUID)
-                    Log.d("low", "Successfully add new chat: ${item.title}!")
+                    dbUseCase.addChatsToPrimaryFolderIfNotExist(item)
                 }
             }
         }
@@ -251,18 +244,8 @@ class MainActivity : AppCompatActivity() {
                     isLoadingChatVK = false
                     listChatsAdapter.addAll(chats)
 
-                    myDbManager.openDb()
                     for (item in chats) {
-                        myDbManager.addChatToDB(item.title, item.chatId)
-                        var folderUID = 0
-                        if (item.messenger == Messengers.VK) {
-                            folderUID = -3
-                        } else if (item.messenger == Messengers.TELEGRAM) {
-                            folderUID = -2
-                        }
-
-                        myDbManager.addChatToFolder(item.chatId, folderUID)
-                        Log.d("low", "Successfully add new chat: ${item.title}!")
+                        dbUseCase.addChatsToPrimaryFolderIfNotExist(item)
                     }
                 }
 
