@@ -3,6 +3,7 @@ package com.goodvibes.multimessenger.usecase
 import android.widget.Toast
 import com.goodvibes.multimessenger.ChatActivity
 import com.goodvibes.multimessenger.datastructure.Chat
+import com.goodvibes.multimessenger.datastructure.Event
 import com.goodvibes.multimessenger.datastructure.Message
 import com.goodvibes.multimessenger.datastructure.Messengers
 import com.goodvibes.multimessenger.network.tgmessenger.Telegram
@@ -31,6 +32,17 @@ class ChatActivityUC(_activityChat: ChatActivity) {
             }
             Messengers.TELEGRAM -> {
                 tg.getMessagesFromChat(chat.chatId, count, first_msg, callback)
+            }
+        }
+    }
+
+    fun startUpdateListener(chat: Chat, callback: (Event) -> Unit) {
+        when(chat.messenger) {
+            Messengers.VK -> {
+                vk.startUpdateListener(callback)
+            }
+            Messengers.TELEGRAM -> {
+                tg.startUpdateListener(callback)
             }
         }
     }
