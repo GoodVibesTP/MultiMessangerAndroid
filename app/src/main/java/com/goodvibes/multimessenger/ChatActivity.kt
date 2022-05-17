@@ -6,6 +6,7 @@ import android.util.Log
 import android.widget.AbsListView
 import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
+import androidx.recyclerview.widget.RecyclerView
 import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.Message
 import com.goodvibes.multimessenger.databinding.ActivityChatBinding
@@ -31,6 +32,7 @@ class ChatActivity : AppCompatActivity() {
 
     lateinit var activityChatBinding : ActivityChatBinding;
     lateinit var usecase : ChatActivityUC
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -61,7 +63,7 @@ class ChatActivity : AppCompatActivity() {
                 usecase.sendMessage(message) { message_id ->
                     message.id = message_id
                     GlobalScope.launch(Dispatchers.Main) {
-                        listMessageAdapter.add(message)
+                        listMessage.add(0, message)
                         listMessageAdapter.notifyDataSetChanged()
                         activityChatBinding.chatInputMessage.text.clear()
                     }
@@ -83,7 +85,7 @@ class ChatActivity : AppCompatActivity() {
                 for (message in messages) {
                     Log.d("MM_LOG", "initListMessage: ${message.text}")
                 }
-                listMessageAdapter.addAll(messages.reversed())
+                listMessage.addAll(messages)
                 listMessageAdapter.notifyDataSetChanged()
                 isLoadingNewMessages = false
             }
@@ -106,7 +108,7 @@ class ChatActivity : AppCompatActivity() {
                         GlobalScope.launch(Dispatchers.Main) {
                             Log.d("MM_LOG", "${event.message.chatId} == ${currentChat.chatId} 3")
 //                            listMessageAdapter.add(event.message)
-                            listMessageAdapter.add(event.message)
+                            listMessage.add(0, event.message)
                             listMessageAdapter.notifyDataSetChanged()
                         }
                     }
@@ -115,23 +117,28 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
-    inner class OnScrollListenerChats : AbsListView.OnScrollListener {
-        override fun onScrollStateChanged(recyclerView: AbsListView?, newState: Int) {
+    inner class OnScrollListenerChats : RecyclerView.OnScrollListener() {
+        var firstVisibleItem = 0
+        var numberLastMessage = numberMessageOnPage
+        val MAX_MESSAGES_ON_PAGE = 25
+        override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+            super.onScrollStateChanged(recyclerView, newState)
         }
 
-        override fun onScroll(view: AbsListView?, firstVisibleItem: Int,
-                              visibleItemCount: Int, totalItemCount: Int) {
-            if (!isLoadingNewMessages && firstVisibleItem == 0) {
-                // (firstVisibleItem + visibleItemCount == totalItemCount)
-                isLoadingNewMessages = true
-                usecase.getMessageFromChat(currentChat, numberMessageOnPage, numberLastMessage) { messages ->
-                    numberLastMessage += numberMessageOnPage
-                    isLoadingNewMessages = false
-                    GlobalScope.launch(Dispatchers.Main) {
-                        for (message in messages.reversed()) {
-                            listMessageAdapter.insert(message, 0)
+        override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+            super.onScrolled(recyclerView, dx, dy)
+            firstVisibleItem += dy
+            Log.d("MM_LOG", "$dy $firstVisibleItem")
+            if (dy > 0) {
+                if (!isLoadingNewMessages && firstVisibleItem > numberLastMessage - MAX_MESSAGES_ON_PAGE) {
+                    isLoadingNewMessages = true
+                    usecase.getMessageFromChat(currentChat, numberMessageOnPage, numberLastMessage) { messages ->
+                        numberLastMessage += numberMessageOnPage
+                        isLoadingNewMessages = false
+                        GlobalScope.launch(Dispatchers.Main) {
+                            listMessage.addAll(messages)
+                            listMessageAdapter.notifyDataSetChanged()
                         }
-                        listMessageAdapter.notifyDataSetChanged()
                     }
                 }
             }
