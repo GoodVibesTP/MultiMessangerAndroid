@@ -243,6 +243,16 @@ object Telegram : Messenger {
         )
     }
 
+    override fun markAsRead(
+        peer_id: Long,
+        message_ids: String?,
+        start_message_id: Long?,
+        mark_conversation_as_read: Boolean,
+        callback: (Int) -> Unit
+    ) {
+
+    }
+
     override fun getChatById(
         chat_id: Long,
         callback: (Chat) -> Unit

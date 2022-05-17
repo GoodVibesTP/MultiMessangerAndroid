@@ -36,6 +36,29 @@ class ChatActivityUC(_activityChat: ChatActivity) {
         }
     }
 
+    fun markAsRead(chat: Chat, callback: (Int) -> Unit) {
+        when(chat.messenger) {
+            Messengers.VK -> {
+                vk.markAsRead(
+                    chat.chatId,
+                    null,
+                    null,
+                    true,
+                    callback
+                )
+            }
+            Messengers.TELEGRAM -> {
+                tg.markAsRead(
+                    chat.chatId,
+                    null,
+                    null,
+                    true,
+                    callback
+                )
+            }
+        }
+    }
+
     fun startUpdateListener(chat: Chat, callback: (Event) -> Unit) {
         when(chat.messenger) {
             Messengers.VK -> {

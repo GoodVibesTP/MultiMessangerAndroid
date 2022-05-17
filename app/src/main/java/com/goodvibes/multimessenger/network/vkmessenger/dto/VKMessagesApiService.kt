@@ -37,6 +37,15 @@ interface VKMessagesApiService {
         @Query("random_id") random_id: Int = 0
     ): Call<VKRespond<Long>>
 
+    @GET("method/messages.markAsRead?v=5.131")
+    fun markAsRead(
+        @Query("access_token") access_token: String,
+        @Query("peer_id") peer_id: Long,
+        @Query("message_ids") message_ids: String?,
+        @Query("start_message_id") start_message_id: Long?,
+        @Query("mark_conversation_as_read") mark_conversation_as_read: Int = 0
+    ): Call<VKRespond<Int>>
+
     @GET("method/messages.getLongPollServer?v=5.131")
     fun getLongPollServer(
         @Query("access_token") access_token: String,

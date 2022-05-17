@@ -45,7 +45,7 @@ object VK : Messenger {
 
     private val vkClient = OriginalVKClient
 
-    private var token = "9344d5de74ceb93309d46178a21cf650cc0645cf733064fa46ba65bb19a9f31f973884e139a28569d5647"
+    private var token = "d4156cd933ded27b58d366664d7b314ea883831ec6872da3ab908318c14bc032a1007fc2b4e7381449184"
 
 
     private val permissions = arrayListOf<VKScope>()
@@ -339,6 +339,68 @@ object VK : Messenger {
 
             override fun onFailure(
                 call: Call<VKRespond<Long>>,
+                t: Throwable
+            ) {
+                Log.d(LOG_TAG, "$methodName failure: $t")
+            }
+        })
+
+        Log.d(LOG_TAG, "$methodName request: ${callForVKRespond.request()}")
+    }
+
+    override fun markAsRead(
+        peer_id: Long,
+        message_ids: String?,
+        start_message_id: Long?,
+        mark_conversation_as_read: Boolean,
+        callback: (Int) -> Unit
+    ) {
+        val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
+        val callForVKRespond: Call<VKRespond<Int>> = messagesService.markAsRead(
+            access_token = this.token,
+            peer_id = peer_id,
+            message_ids = message_ids,
+            start_message_id = start_message_id,
+            mark_conversation_as_read = if (mark_conversation_as_read) 1 else 0
+        )
+
+        callForVKRespond.enqueue(object : Callback<VKRespond<Int>> {
+            override fun onResponse(
+                call: Call<VKRespond<Int>>,
+                response: Response<VKRespond<Int>>
+            ) {
+                Log.d(LOG_TAG, "$methodName response code: ${response.code()}")
+                if (response.isSuccessful) {
+                    val responseBody = response.body()
+                    when {
+                        responseBody == null -> {
+                            Log.d(LOG_TAG, "$methodName successful, but response.body() is null")
+                        }
+                        responseBody.response != null -> {
+                            Log.d(
+                                LOG_TAG,
+                                "$methodName successful"
+                            )
+                            callback(responseBody.response)
+                        }
+                        responseBody.error != null -> {
+                            Log.d(
+                                LOG_TAG,
+                                "$methodName error ${responseBody.error.errorCode}: ${responseBody.error.errorMsg}"
+                            )
+                        }
+                        else -> {
+                            Log.d(
+                                LOG_TAG,
+                                "$methodName response is null && error is null"
+                            )
+                        }
+                    }
+                }
+            }
+
+            override fun onFailure(
+                call: Call<VKRespond<Int>>,
                 t: Throwable
             ) {
                 Log.d(LOG_TAG, "$methodName failure: $t")

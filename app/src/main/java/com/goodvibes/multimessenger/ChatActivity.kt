@@ -88,6 +88,15 @@ class ChatActivity : AppCompatActivity() {
                 isLoadingNewMessages = false
             }
         }
+        usecase.markAsRead(currentChat) {
+            if (it == 1) {
+                Toast.makeText(
+                    this,
+                    "messages marked as readed",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
         usecase.startUpdateListener(currentChat) { event ->
             when(event) {
                 is Event.NewMessage -> {
