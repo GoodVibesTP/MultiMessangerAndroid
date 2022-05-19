@@ -4,6 +4,7 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
@@ -15,7 +16,7 @@ class ListSingleChatAdapter(
     ctx: Context,
     val messages: MutableList<Message>
 ): RecyclerView.Adapter<ListSingleChatAdapter.ViewHolder>() {
-    val inflater = LayoutInflater.from(ctx)
+    private val inflater = LayoutInflater.from(ctx)
 
 //    public constructor(ctx: Context, messages: MutableList<Message>) :
 //            super(ctx, R.layout.list_item_chats, messages){}
@@ -67,12 +68,16 @@ class ListSingleChatAdapter(
             holder.layoutMessageOutgoing.visibility = View.VISIBLE
             holder.textViewTextMessageOutgoing.text = message.text
             holder.textViewTimeOutgoing.text = message.time
+            holder.unreadMarkerOutgoing.visibility = if (message.read) View.GONE else View.VISIBLE
             holder.layoutMessageIngoing.visibility = View.GONE
+            holder.unreadMarkerIngoing.visibility = View.GONE
         } else {
             holder.layoutMessageIngoing.visibility = View.VISIBLE
             holder.textViewTextMessageIngoing.text = message.text
             holder.textViewTimeIngoing.text = message.time
+            holder.unreadMarkerIngoing.visibility = if (message.read) View.GONE else View.VISIBLE
             holder.layoutMessageOutgoing.visibility = View.GONE
+            holder.unreadMarkerOutgoing.visibility = View.GONE
         }
     }
 
@@ -87,14 +92,19 @@ class ListSingleChatAdapter(
         internal val textViewTextMessageOutgoing: TextView
         internal val textViewTimeIngoing: TextView
         internal val textViewTimeOutgoing: TextView
+        internal val unreadMarkerIngoing: ImageView
+        internal val unreadMarkerOutgoing: ImageView
 
         init {
             layoutMessageIngoing = view.findViewById(R.id.chat_other_user_layout)
             textViewTextMessageIngoing = view.findViewById(R.id.chat_other_user_message)
             textViewTimeIngoing = view.findViewById(R.id.chat_other_user_message_time)
+            unreadMarkerIngoing = view.findViewById(R.id.chat_other_user_message_unread_marker)
+
             layoutMessageOutgoing = view.findViewById(R.id.chat_my_layout)
             textViewTextMessageOutgoing = view.findViewById(R.id.chat_my_message)
             textViewTimeOutgoing = view.findViewById(R.id.chat_my_message_time)
+            unreadMarkerOutgoing = view.findViewById(R.id.chat_my_message_unread_marker)
         }
     }
 }

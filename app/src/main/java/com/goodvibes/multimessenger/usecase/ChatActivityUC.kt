@@ -25,13 +25,13 @@ class ChatActivityUC(_activityChat: ChatActivity) {
         }
     }
 
-    fun getMessageFromChat(chat: Chat, count: Int, first_msg: Int = 0, callback: (MutableList<Message>) -> Unit) {
+    fun getMessageFromChat(chat: Chat, count: Int, first_msg: Int = 0, first_msg_id: Long = 0, callback: (MutableList<Message>) -> Unit) {
         when(chat.messenger) {
             Messengers.VK -> {
-                vk.getMessagesFromChat(chat.chatId, count, first_msg, callback)
+                vk.getMessagesFromChat(chat.chatId, count, first_msg, first_msg_id, callback)
             }
             Messengers.TELEGRAM -> {
-                tg.getMessagesFromChat(chat.chatId, count, first_msg, callback)
+                tg.getMessagesFromChat(chat.chatId, count, first_msg, first_msg_id, callback)
             }
         }
     }

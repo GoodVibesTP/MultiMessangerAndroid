@@ -161,6 +161,7 @@ object VK : Messenger {
         chat_id: Long,
         count: Int,
         first_msg: Int,
+        first_msg_id: Long,
         callback: (MutableList<Message>) -> Unit
     ) {
         val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
@@ -193,6 +194,12 @@ object VK : Messenger {
                             for (item in responseBody.response.items) {
                                 val nextMessage = toDefaultMessage(item, currentUserId)
                                 if (nextMessage != null) {
+                                    nextMessage.read = if (nextMessage.isMyMessage) {
+                                        nextMessage.id <= responseBody.response.conversations[0].outRead
+                                    }
+                                    else {
+                                        nextMessage.id <= responseBody.response.conversations[0].inRead
+                                    }
                                     messagesArray.add(nextMessage)
                                 }
                             }
@@ -350,7 +357,7 @@ object VK : Messenger {
 
     override fun markAsRead(
         peer_id: Long,
-        message_ids: String?,
+        message_ids: List<Long>?,
         start_message_id: Long?,
         mark_conversation_as_read: Boolean,
         callback: (Int) -> Unit
@@ -359,7 +366,7 @@ object VK : Messenger {
         val callForVKRespond: Call<VKRespond<Int>> = messagesService.markAsRead(
             access_token = this.token,
             peer_id = peer_id,
-            message_ids = message_ids,
+            message_ids = message_ids?.joinToString(separator = ","),
             start_message_id = start_message_id,
             mark_conversation_as_read = if (mark_conversation_as_read) 1 else 0
         )

@@ -77,6 +77,8 @@ object Telegram : Messenger {
             lastMessage =
                 if (chat.lastMessage == null) null
                 else toDefaultMessage(chat.lastMessage!!),
+            inRead = chat.lastReadInboxMessageId,
+            outRead = chat.lastReadOutboxMessageId,
             messenger = Messengers.TELEGRAM
         )
     }
@@ -114,7 +116,7 @@ object Telegram : Messenger {
             },
             fwdMessages = null,
             replyTo = null,
-            messenger = Messengers.TELEGRAM
+            messenger = Messengers.TELEGRAM,
         )
     }
 
@@ -172,7 +174,7 @@ object Telegram : Messenger {
                             val chatArray = arrayListOf<Chat>()
                             val limit = min(first_chat + count, chatIds.size)
                             chatArray.ensureCapacity(limit)
-                            for (i in first_chat..limit - 1) {
+                            for (i in first_chat until limit) {
                                 val telegramNextChat = chats[chatIds[i]]
                                 if (telegramNextChat != null) {
                                     chatArray.add(toDefaultChat(telegramNextChat))
@@ -185,40 +187,62 @@ object Telegram : Messenger {
                 }
             }
         }
-
     }
-
 
     override fun getMessagesFromChat(
         chat_id: Long,
         count: Int,
         first_msg: Int,
+        first_msg_id: Long,
         callback: (MutableList<Message>) -> Unit
     ) {
+        Log.d("TG_LOG", "$first_msg $count")
         if (haveAuthorization) {
             Log.d("MM_LOG", "getMessagesFromChat")
-            client.send(
-                TdApi.GetChatHistory(
-                    chat_id,
-                    0,
-                    0,
-                    100,
-                    false
-                ),
-                CallbackHandler<MutableList<Message>> {
-                    client.send(
-                        TdApi.GetChatHistory(
-                            chat_id,
-                            0,
-                            0,
-                            100,
-                            true
-                        ),
-                        CallbackHandler(callback)
-                    )
-                }
+            val messageList: MutableList<Message> = mutableListOf()
+
+            getMessagesFromChat(
+                chat_id,
+                count,
+                first_msg_id,
+                messageList,
+                callback
             )
         }
+    }
+
+    private fun getMessagesFromChat(
+        chat_id: Long,
+        count: Int,
+        first_msg_id: Long,
+        messageList: MutableList<Message>,
+        callback: (MutableList<Message>) -> Unit
+    ) {
+        client.send(
+            TdApi.GetChatHistory(
+                chat_id,
+                first_msg_id,
+                0,
+                count,
+                false
+            ),
+            CallbackHandler<MutableList<Message>> {
+                messageList.addAll(it)
+
+                if (count - it.size > 0) {
+                    getMessagesFromChat(
+                        chat_id,
+                        count - it.size,
+                        messageList.last().id,
+                        messageList,
+                        callback
+                    )
+                }
+                else {
+                    callback(messageList)
+                }
+            }
+        )
     }
 
     override fun sendMessage(
@@ -245,12 +269,20 @@ object Telegram : Messenger {
 
     override fun markAsRead(
         peer_id: Long,
-        message_ids: String?,
+        message_ids: List<Long>?,
         start_message_id: Long?,
         mark_conversation_as_read: Boolean,
         callback: (Int) -> Unit
     ) {
-
+        client.send(
+            TdApi.ViewMessages(
+                peer_id,
+                0,
+                message_ids?.toLongArray(),
+                false
+            ),
+            MarkAsReadResultHandler(callback)
+        )
     }
 
     override fun getChatById(
@@ -439,6 +471,22 @@ object Telegram : Messenger {
         override fun onResult(tdObject: TdApi.Object) {
             val sentMessage = (tdObject as TdApi.Message)
             callback(toDefaultMessage(sentMessage).id)
+        }
+    }
+
+    private class MarkAsReadResultHandler(
+        val callback: (Int) -> Unit
+    ) : Client.ResultHandler {
+        override fun onResult(tdObject: TdApi.Object) {
+            when (tdObject.constructor) {
+                TdApi.Error.CONSTRUCTOR -> {
+                    Log.d(LOG_TAG, "Receive an error: $tdObject")
+                }
+                TdApi.Ok.CONSTRUCTOR -> {
+                    callback(1)
+                }
+                else -> Log.d(LOG_TAG, "Receive wrong response from TDLib: $tdObject")
+            }
         }
     }
 

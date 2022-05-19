@@ -22,6 +22,7 @@ interface Messenger {
         chat_id: Long,
         count: Int,
         first_msg: Int = 0,
+        first_msg_id: Long = 0,
         callback: (MutableList<Message>) -> Unit
     )
 
@@ -38,7 +39,7 @@ interface Messenger {
 
     fun markAsRead(
         peer_id: Long,
-        message_ids: String?,
+        message_ids: List<Long>?,
         start_message_id: Long?,
         mark_conversation_as_read: Boolean = false,
         callback: (Int) -> Unit

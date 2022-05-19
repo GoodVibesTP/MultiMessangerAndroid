@@ -60,7 +60,9 @@ fun toDefaultChat(
             else -> ChatType.OTHER
         },
         messenger = Messengers.VK,
-        lastMessage = toDefaultMessage(conversationWithMessage.lastMessage, currentUserId)
+        lastMessage = toDefaultMessage(conversationWithMessage.lastMessage, currentUserId),
+        inRead = conversationWithMessage.conversation.inRead,
+        outRead = conversationWithMessage.conversation.outRead
     )
 }
 
@@ -116,7 +118,9 @@ fun toDefaultChat(
             else -> ChatType.OTHER
         },
         messenger = Messengers.VK,
-        lastMessage = toDefaultMessage(conversationWithMessage.lastMessage, currentUserId)
+        lastMessage = toDefaultMessage(conversationWithMessage.lastMessage, currentUserId),
+        inRead = conversationWithMessage.conversation.inRead,
+        outRead = conversationWithMessage.conversation.outRead
     )
 }
 

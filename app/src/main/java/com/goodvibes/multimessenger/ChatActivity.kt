@@ -3,9 +3,10 @@ package com.goodvibes.multimessenger
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
-import android.widget.AbsListView
+import android.view.View
 import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.Message
@@ -15,7 +16,6 @@ import com.goodvibes.multimessenger.usecase.ChatActivityUC
 import com.goodvibes.multimessenger.util.ListSingleChatAdapter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
@@ -30,8 +30,10 @@ class ChatActivity : AppCompatActivity() {
     private var numberMessageOnPage: Int = 50
     private var numberLastMessage: Int = 50
 
-    lateinit var activityChatBinding : ActivityChatBinding;
-    lateinit var usecase : ChatActivityUC
+    lateinit var activityChatBinding: ActivityChatBinding;
+    lateinit var usecase: ChatActivityUC
+
+    lateinit var progressBarLoadMoreMessages: View
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -48,6 +50,9 @@ class ChatActivity : AppCompatActivity() {
         toolbar.setNavigationOnClickListener{
             finish()
         }
+        progressBarLoadMoreMessages = findViewById(R.id.progressbar)
+        progressBarLoadMoreMessages.visibility = View.GONE
+
         activityChatBinding.chatBtnSendMessage.setOnClickListener {
             val messageString = activityChatBinding.chatInputMessage.text.toString()
             if(!messageString.isEmpty()) {
@@ -77,9 +82,9 @@ class ChatActivity : AppCompatActivity() {
 
     fun initListMessage() {
         listMessage = mutableListOf()
-        listMessageAdapter = ListSingleChatAdapter(this@ChatActivity, listMessage);
-        activityChatBinding.listMessage.setAdapter(listMessageAdapter)
-        activityChatBinding.listMessage.setOnScrollListener(OnScrollListenerChats())
+        listMessageAdapter = ListSingleChatAdapter(this@ChatActivity, listMessage)
+        activityChatBinding.listMessage.adapter = listMessageAdapter
+        activityChatBinding.listMessage.addOnScrollListener(OnScrollListenerChats())
         usecase.getMessageFromChat(currentChat, 50) { messages ->
             GlobalScope.launch(Dispatchers.Main) {
                 for (message in messages) {
@@ -118,27 +123,33 @@ class ChatActivity : AppCompatActivity() {
     }
 
     inner class OnScrollListenerChats : RecyclerView.OnScrollListener() {
-        var firstVisibleItem = 0
-        var numberLastMessage = numberMessageOnPage
-        val MAX_MESSAGES_ON_PAGE = 25
         override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
             super.onScrollStateChanged(recyclerView, newState)
         }
 
         override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
             super.onScrolled(recyclerView, dx, dy)
-            firstVisibleItem += dy
-            Log.d("MM_LOG", "$dy $firstVisibleItem")
-            if (dy > 0) {
-                if (!isLoadingNewMessages && firstVisibleItem > numberLastMessage - MAX_MESSAGES_ON_PAGE) {
+            val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+            val visibleItemCount = layoutManager.childCount
+            val totalItemCount = layoutManager.itemCount
+            val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
+            if (!isLoadingNewMessages && firstVisibleItemPosition >= 0) {
+                if (visibleItemCount + firstVisibleItemPosition >= totalItemCount) {
+                    progressBarLoadMoreMessages.visibility = View.VISIBLE
                     isLoadingNewMessages = true
-                    usecase.getMessageFromChat(currentChat, numberMessageOnPage, numberLastMessage) { messages ->
+                    usecase.getMessageFromChat(
+                        chat = currentChat,
+                        count = numberMessageOnPage,
+                        first_msg = numberLastMessage,
+                        first_msg_id = listMessage.last().id
+                    ) { messages ->
                         numberLastMessage += numberMessageOnPage
                         isLoadingNewMessages = false
                         GlobalScope.launch(Dispatchers.Main) {
                             listMessage.addAll(messages)
                             listMessageAdapter.notifyDataSetChanged()
                         }
+                        progressBarLoadMoreMessages.visibility = View.GONE
                     }
                 }
             }

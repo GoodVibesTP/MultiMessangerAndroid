@@ -11,5 +11,6 @@ data class Chat(
     var chatType: ChatType,
     var messenger: Messengers,
     var folder: Folder = Folder(-100,"empty",),
+    var inRead: Long,
+    var outRead: Long
 ) : Serializable
-
