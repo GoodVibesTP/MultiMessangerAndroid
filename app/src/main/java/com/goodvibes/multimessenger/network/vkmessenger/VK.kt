@@ -47,7 +47,6 @@ object VK : Messenger {
 
     private var token = "9344d5de74ceb93309d46178a21cf650cc0645cf733064fa46ba65bb19a9f31f973884e139a28569d5647"
 
-
     private val permissions = arrayListOf<VKScope>()
 
     private val tokenTracker = object: VKTokenExpiredHandler {

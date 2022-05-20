@@ -29,7 +29,7 @@ class MyDBManager(context: Context) {
         db?.insert(MyDbNameClass.FOLDERS_TABLE_NAME, null, values)
     }
 
-    fun addChatToFolder(chatID: Int, folderID: Int) {
+    fun addChatToFolder(chatID: Long, folderID: Int) {
         val values = ContentValues().apply {
             put(MyDbNameClass.FOLDERS_SHARING_FOLDER_ID_COLUMN_NAME, folderID)
             put(MyDbNameClass.FOLDERS_SHARING_CHAT_ID_COLUMN_NAME, chatID)
@@ -91,6 +91,30 @@ class MyDBManager(context: Context) {
             val dataText = cursor.getString(
                 cursor.getColumnIndex(MyDbNameClass.CHATS_TITLE_COLUMN_NAME))
             data = dataText
+        }
+
+        cursor.close()
+
+        return data
+    }
+
+    @SuppressLint("Range")
+    fun getFolderByName(name: String): Int {
+        var data = 0
+
+        val cursor = db?.query(
+            MyDbNameClass.FOLDERS_TABLE_NAME,   // The table to query
+            null,             // The array of columns to return (pass null to get all)
+            "${MyDbNameClass.FOLDERS_TITLE_COLUMN_NAME} = ?",              // The columns for the WHERE clause
+            arrayOf(name),          // The values for the WHERE clause
+            null,                   // don't group the rows
+            null,                   // don't filter by row groups
+            null               // The sort order
+        )
+
+        while(cursor?.moveToNext()!!) {
+            data = cursor.getInt(
+                cursor.getColumnIndex(MyDbNameClass.FOLDERS_UID_COLUMN_NAME))
         }
 
         cursor.close()
