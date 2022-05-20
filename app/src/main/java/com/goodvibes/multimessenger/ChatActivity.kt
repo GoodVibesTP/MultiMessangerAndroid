@@ -1,5 +1,6 @@
 package com.goodvibes.multimessenger
 
+import android.annotation.SuppressLint
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -20,6 +21,7 @@ import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.*
 
+@SuppressLint("NotifyDataSetChanged")
 class ChatActivity : AppCompatActivity() {
     lateinit var currentChat: Chat
     var listMessage = Collections.synchronizedList(arrayListOf<Message>())
@@ -34,7 +36,6 @@ class ChatActivity : AppCompatActivity() {
     lateinit var usecase: ChatActivityUC
 
     lateinit var progressBarLoadMoreMessages: View
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,12 +64,14 @@ class ChatActivity : AppCompatActivity() {
                     date = dateTime.toInt(),
                     time = SimpleDateFormat("dd/M/yyyy HH:mm:ss", Locale("ru", "ru")).format(dateTime),
                     isMyMessage = true,
+                    read = false,
                     messenger = currentChat.messenger
                 )
                 usecase.sendMessage(message) { message_id ->
                     message.id = message_id
                     GlobalScope.launch(Dispatchers.Main) {
                         listMessage.add(0, message)
+                        Log.d("MM_LOG", "send message ${message.id}")
                         listMessageAdapter.notifyDataSetChanged()
                         activityChatBinding.chatInputMessage.text.clear()
                     }
@@ -93,27 +96,63 @@ class ChatActivity : AppCompatActivity() {
                 listMessage.addAll(messages)
                 listMessageAdapter.notifyDataSetChanged()
                 isLoadingNewMessages = false
-            }
-        }
-        usecase.markAsRead(currentChat) {
-            if (it == 1) {
-                Toast.makeText(
-                    this,
-                    "messages marked as readed",
-                    Toast.LENGTH_LONG
-                ).show()
+
+                markAsReadUntil(listMessage[0].id)
             }
         }
         usecase.startUpdateListener(currentChat) { event ->
             when(event) {
                 is Event.NewMessage -> {
-                    Log.d("MM_LOG", "${event.message.chatId} == ${currentChat.chatId}")
                     if (event.message.chatId == currentChat.chatId) {
-                        Log.d("MM_LOG", "${event.message.chatId} == ${currentChat.chatId} 2")
                         GlobalScope.launch(Dispatchers.Main) {
-                            Log.d("MM_LOG", "${event.message.chatId} == ${currentChat.chatId} 3")
-//                            listMessageAdapter.add(event.message)
-                            listMessage.add(0, event.message)
+                            if (listMessage.lastOrNull { it.id == event.message.id } == null) {
+                                Log.d("MM_LOG", "get message ${event.message.id}")
+                                listMessage.add(0, event.message)
+                                listMessageAdapter.notifyDataSetChanged()
+                            }
+                        }
+                    }
+                }
+                is Event.ReadIngoingUntil -> {
+                    if (currentChat.chatId == event.chat_id) {
+                        GlobalScope.launch(Dispatchers.Main) {
+                            Toast.makeText(
+                                this@ChatActivity,
+                                "ingoing messages marked as read",
+                                Toast.LENGTH_LONG
+                            ).show()
+                            currentChat.inRead = event.message_id
+                            for (message in listMessage) {
+                                if (!message.isMyMessage && message.id <= event.message_id) {
+                                    if (message.read) {
+                                        break
+                                    } else {
+                                        message.read = true
+                                    }
+                                }
+                            }
+                            listMessageAdapter.notifyDataSetChanged()
+                        }
+                    }
+                }
+                is Event.ReadOutgoingUntil -> {
+                    if (currentChat.chatId == event.chat_id) {
+                        GlobalScope.launch(Dispatchers.Main) {
+                            Toast.makeText(
+                                this@ChatActivity,
+                                "outgoing messages marked as read",
+                                Toast.LENGTH_LONG
+                            ).show()
+                            currentChat.inRead = event.message_id
+                            for (message in listMessage) {
+                                if (message.isMyMessage && message.id <= event.message_id) {
+                                    if (message.read) {
+                                        break
+                                    } else {
+                                        message.read = true
+                                    }
+                                }
+                            }
                             listMessageAdapter.notifyDataSetChanged()
                         }
                     }
@@ -150,6 +189,50 @@ class ChatActivity : AppCompatActivity() {
                             listMessageAdapter.notifyDataSetChanged()
                         }
                         progressBarLoadMoreMessages.visibility = View.GONE
+                    }
+                }
+            }
+
+            val firstCompletelyVisibleItem = layoutManager.findFirstCompletelyVisibleItemPosition()
+            if (listMessage[firstCompletelyVisibleItem].id > currentChat.inRead) {
+                markAsReadUntil(listMessage[firstCompletelyVisibleItem].id)
+            }
+        }
+    }
+
+    private fun markAsReadUntil(message_id: Long) {
+        val unreadMessageIds: MutableList<Long> = mutableListOf()
+
+        for (message in listMessage) {
+            if (!message.isMyMessage && !message.read) {
+                unreadMessageIds.add(message.id)
+            }
+        }
+        Log.d("MM_LOG", "initListMessage, read message: ${currentChat.inRead} $message_id ${unreadMessageIds.size}")
+
+        if (unreadMessageIds.size > 0) {
+            usecase.markAsRead(
+                chat = currentChat,
+                message_ids = unreadMessageIds
+            ) {
+                if (it == 1) {
+                    GlobalScope.launch(Dispatchers.Main) {
+                        Toast.makeText(
+                            this@ChatActivity,
+                            "messages marked as read",
+                            Toast.LENGTH_LONG
+                        ).show()
+                        currentChat.inRead = message_id
+                        for (message in listMessage) {
+                            if (!message.isMyMessage && message.id <= message_id) {
+                                if (message.read) {
+                                    break
+                                } else {
+                                    message.read = true
+                                }
+                            }
+                        }
+                        listMessageAdapter.notifyDataSetChanged()
                     }
                 }
             }

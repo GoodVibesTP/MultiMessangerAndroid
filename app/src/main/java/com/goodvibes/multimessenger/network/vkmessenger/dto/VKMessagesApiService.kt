@@ -33,7 +33,7 @@ interface VKMessagesApiService {
     @GET("method/messages.send?v=5.131")
     fun send(
         @Query("access_token") access_token: String,
-        @Query("user_id") user_id: Long,
+        @Query("peer_id") peer_id: Long,
         @Query("message") message: String,
         @Query("random_id") random_id: Int = 0
     ): Call<VKRespond<Long>>

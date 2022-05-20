@@ -36,23 +36,23 @@ class ChatActivityUC(_activityChat: ChatActivity) {
         }
     }
 
-    fun markAsRead(chat: Chat, callback: (Int) -> Unit) {
+    fun markAsRead(chat: Chat, message_ids: List<Long>, callback: (Int) -> Unit) {
         when(chat.messenger) {
             Messengers.VK -> {
                 vk.markAsRead(
                     chat.chatId,
+                    message_ids,
                     null,
-                    null,
-                    true,
+                    false,
                     callback
                 )
             }
             Messengers.TELEGRAM -> {
                 tg.markAsRead(
                     chat.chatId,
+                    message_ids,
                     null,
-                    null,
-                    true,
+                    false,
                     callback
                 )
             }

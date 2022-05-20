@@ -14,6 +14,15 @@ fun toDefaultChat(
     response: VKMessagesGetConversationsResponse,
     currentUserId: Long
 ) : Chat {
+    val lastMessage = toDefaultMessage(conversationWithMessage.lastMessage, currentUserId)
+    if (lastMessage != null) {
+        lastMessage.read = if (lastMessage.isMyMessage) {
+            lastMessage.id <= conversationWithMessage.conversation.outRead
+        }
+        else {
+            lastMessage.id <= conversationWithMessage.conversation.inRead
+        }
+    }
     return Chat(
         chatId = conversationWithMessage.conversation.peer.id,
         img = R.mipmap.tg_icon,
@@ -60,7 +69,7 @@ fun toDefaultChat(
             else -> ChatType.OTHER
         },
         messenger = Messengers.VK,
-        lastMessage = toDefaultMessage(conversationWithMessage.lastMessage, currentUserId),
+        lastMessage = lastMessage,
         inRead = conversationWithMessage.conversation.inRead,
         outRead = conversationWithMessage.conversation.outRead
     )
@@ -72,9 +81,18 @@ fun toDefaultChat(
     response: VKMessagesGetConversationsByIdResponse,
     currentUserId: Long
 ) : Chat {
+    val lastMessage = toDefaultMessage(conversationWithMessage.lastMessage, currentUserId)
+    if (lastMessage != null) {
+        lastMessage.read = if (lastMessage.isMyMessage) {
+            lastMessage.id <= conversationWithMessage.conversation.outRead
+        }
+        else {
+            lastMessage.id <= conversationWithMessage.conversation.inRead
+        }
+    }
     return Chat(
         chatId = conversationWithMessage.conversation.peer.id,
-        img = R.drawable.kotik,
+        img = R.mipmap.tg_icon,
         imgUri = when(conversationWithMessage.conversation.peer.type) {
             VKMessagesConversationPeerType.CHAT -> {
                 conversationWithMessage.conversation.chatSettings.photo?.photo200
@@ -118,7 +136,7 @@ fun toDefaultChat(
             else -> ChatType.OTHER
         },
         messenger = Messengers.VK,
-        lastMessage = toDefaultMessage(conversationWithMessage.lastMessage, currentUserId),
+        lastMessage = lastMessage,
         inRead = conversationWithMessage.conversation.inRead,
         outRead = conversationWithMessage.conversation.outRead
     )

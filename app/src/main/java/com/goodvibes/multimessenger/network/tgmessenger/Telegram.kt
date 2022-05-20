@@ -68,15 +68,24 @@ object Telegram : Messenger {
     private val dateFormat = SimpleDateFormat("dd/M/yyyy HH:mm:ss", Locale("ru", "ru"))
 
     private fun toDefaultChat(chat: TdApi.Chat): Chat {
+        val lastMessage = if(chat.lastMessage == null) null else {
+            toDefaultMessage(chat.lastMessage!!)
+        }
+        if (lastMessage != null) {
+            lastMessage.read = if (lastMessage.isMyMessage) {
+                lastMessage.id <= chat.lastReadOutboxMessageId
+            }
+            else {
+                lastMessage.id <= chat.lastReadInboxMessageId
+            }
+        }
         return Chat(
             chatId = chat.id,
             img = R.mipmap.tg_icon,
             imgUri = null,
             title = chat.title,
             chatType = ChatType.CHAT,
-            lastMessage =
-                if (chat.lastMessage == null) null
-                else toDefaultMessage(chat.lastMessage!!),
+            lastMessage = lastMessage,
             inRead = chat.lastReadInboxMessageId,
             outRead = chat.lastReadOutboxMessageId,
             messenger = Messengers.TELEGRAM
@@ -218,6 +227,7 @@ object Telegram : Messenger {
         messageList: MutableList<Message>,
         callback: (MutableList<Message>) -> Unit
     ) {
+        Log.d("MM_LOG", "getMessagesFromChat $count")
         client.send(
             TdApi.GetChatHistory(
                 chat_id,
@@ -229,7 +239,7 @@ object Telegram : Messenger {
             CallbackHandler<MutableList<Message>> {
                 messageList.addAll(it)
 
-                if (count - it.size > 0) {
+                if (count - it.size > 0 && it.size != 0) {
                     getMessagesFromChat(
                         chat_id,
                         count - it.size,
@@ -239,6 +249,15 @@ object Telegram : Messenger {
                     )
                 }
                 else {
+                    val chat = chats[chat_id]
+                    for (message in messageList) {
+                        message.read = if (message.isMyMessage) {
+                            message.id <= chat!!.lastReadOutboxMessageId
+                        }
+                        else {
+                            message.id <= chat!!.lastReadInboxMessageId
+                        }
+                    }
                     callback(messageList)
                 }
             }
@@ -279,7 +298,7 @@ object Telegram : Messenger {
                 peer_id,
                 0,
                 message_ids?.toLongArray(),
-                false
+                true
             ),
             MarkAsReadResultHandler(callback)
         )
@@ -480,12 +499,13 @@ object Telegram : Messenger {
         override fun onResult(tdObject: TdApi.Object) {
             when (tdObject.constructor) {
                 TdApi.Error.CONSTRUCTOR -> {
-                    Log.d(LOG_TAG, "Receive an error: $tdObject")
+                    Log.d("MM_LOG", "Receive an error: $tdObject")
                 }
                 TdApi.Ok.CONSTRUCTOR -> {
+                    Log.d("MM_LOG", "Receive OK: $tdObject")
                     callback(1)
                 }
-                else -> Log.d(LOG_TAG, "Receive wrong response from TDLib: $tdObject")
+                else -> Log.d("MM_LOG", "Receive wrong response from TDLib: $tdObject")
             }
         }
     }
@@ -549,7 +569,6 @@ object Telegram : Messenger {
                 }
                 TdApi.UpdateChatLastMessage.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateChatLastMessage")
-
                     val updateChat = tdObject as TdApi.UpdateChatLastMessage
                     val chat = chats[updateChat.chatId]
                     if (chat != null) {
@@ -563,9 +582,23 @@ object Telegram : Messenger {
                 }
                 TdApi.UpdateChatReadInbox.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateChatReadInbox")
+                    val updateChatReadInbox = tdObject as TdApi.UpdateChatReadInbox
+                    onEventsCallback(Event.ReadIngoingUntil(
+                        chat_id = updateChatReadInbox.chatId,
+                        message_id = updateChatReadInbox.lastReadInboxMessageId,
+                        messenger = Messengers.TELEGRAM
+                        )
+                    )
                 }
                 TdApi.UpdateChatReadOutbox.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateChatReadOutbox")
+                    val updateChatReadOutbox = tdObject as TdApi.UpdateChatReadOutbox
+                    onEventsCallback(Event.ReadIngoingUntil(
+                        chat_id = updateChatReadOutbox.chatId,
+                        message_id = updateChatReadOutbox.lastReadOutboxMessageId,
+                        messenger = Messengers.TELEGRAM
+                        )
+                    )
                 }
                 TdApi.UpdateChatUnreadMentionCount.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateChatUnreadMentionCount")
@@ -580,8 +613,10 @@ object Telegram : Messenger {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateNewMessage, $tdObject")
                     val updateNewMessage = tdObject as TdApi.UpdateNewMessage
                     if (registeredForUpdates) {
+                        val newMessage = toDefaultMessage(updateNewMessage.message)
+                        newMessage.read = false
                         onEventsCallback(Event.NewMessage(
-                            message = toDefaultMessage(updateNewMessage.message),
+                            message = newMessage,
                             direction = Event.NewMessage.Direction.INGOING
                             )
                         )

@@ -10,4 +10,16 @@ sealed class Event {
             OUTGOING
         }
     }
+
+    class ReadIngoingUntil(
+        val chat_id: Long,
+        val message_id: Long,
+        val messenger: Messengers
+    ) : Event()
+
+    class ReadOutgoingUntil(
+        val chat_id: Long,
+        val message_id: Long,
+        val messenger: Messengers
+    ) : Event()
 }

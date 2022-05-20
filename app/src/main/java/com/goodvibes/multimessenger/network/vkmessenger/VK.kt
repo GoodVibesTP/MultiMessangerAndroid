@@ -45,7 +45,7 @@ object VK : Messenger {
 
     private val vkClient = OriginalVKClient
 
-    private var token = "d4156cd933ded27b58d366664d7b314ea883831ec6872da3ab908318c14bc032a1007fc2b4e7381449184"
+    private var token = "your_token"
 
 
     private val permissions = arrayListOf<VKScope>()
@@ -305,7 +305,7 @@ object VK : Messenger {
         val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
         val callForVKRespond: Call<VKRespond<Long>> = messagesService.send(
             access_token = this.token,
-            user_id = user_id,
+            peer_id = user_id,
             message = text
         )
 
@@ -362,12 +362,15 @@ object VK : Messenger {
         mark_conversation_as_read: Boolean,
         callback: (Int) -> Unit
     ) {
+        val maxMessageId = if (start_message_id == null) start_message_id else {
+            message_ids?.maxByOrNull { it }
+        }
         val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
         val callForVKRespond: Call<VKRespond<Int>> = messagesService.markAsRead(
             access_token = this.token,
             peer_id = peer_id,
-            message_ids = message_ids?.joinToString(separator = ","),
-            start_message_id = start_message_id,
+            message_ids = null,
+            start_message_id = maxMessageId,
             mark_conversation_as_read = if (mark_conversation_as_read) 1 else 0
         )
 
@@ -612,7 +615,8 @@ object VK : Messenger {
                                             chatId = updateItem[VK_UPDATE.NEW_MESSAGE.MINOR_ID].asLong,
                                             userId = updateItem[VK_UPDATE.NEW_MESSAGE.MINOR_ID].asLong,
                                             text = updateItem[VK_UPDATE.NEW_MESSAGE.TEXT].asString,
-                                            isMyMessage = updateItem[VK_UPDATE.NEW_MESSAGE.FLAGS].asInt and 2 == 0,
+                                            isMyMessage = updateItem[VK_UPDATE.NEW_MESSAGE.FLAGS].asInt and 2 != 0,
+                                            read = false,
                                             date = datetime,
                                             time = dateFormat.format(datetime * 1000L),
                                             fwdMessages = null,
@@ -625,6 +629,20 @@ object VK : Messenger {
                                         else {
                                             Event.NewMessage.Direction.OUTGOING
                                         }
+                                    )
+                                }
+                                VK_UPDATE.EVENTS.READ_INGOING -> {
+                                    Event.ReadIngoingUntil(
+                                        chat_id = updateItem[VK_UPDATE.READ_INGOING.PEER_ID].asLong,
+                                        message_id = updateItem[VK_UPDATE.READ_INGOING.MESSAGE_ID].asLong,
+                                        messenger = Messengers.VK
+                                    )
+                                }
+                                VK_UPDATE.EVENTS.READ_OUTGOING -> {
+                                    Event.ReadOutgoingUntil(
+                                        chat_id = updateItem[VK_UPDATE.READ_OUTGOING.PEER_ID].asLong,
+                                        message_id = updateItem[VK_UPDATE.READ_OUTGOING.MESSAGE_ID].asLong,
+                                        messenger = Messengers.TELEGRAM
                                     )
                                 }
                                 else -> {
