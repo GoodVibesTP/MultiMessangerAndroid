@@ -70,9 +70,11 @@ class ChatActivity : AppCompatActivity() {
                 usecase.sendMessage(message) { message_id ->
                     message.id = message_id
                     GlobalScope.launch(Dispatchers.Main) {
-                        listMessage.add(0, message)
-                        Log.d("MM_LOG", "send message ${message.id}")
-                        listMessageAdapter.notifyDataSetChanged()
+                        if (listMessage.lastOrNull { it.id == message_id } == null) {
+                            listMessage.add(0, message)
+                            Log.d("MM_LOG", "send message ${message.id}")
+                            listMessageAdapter.notifyDataSetChanged()
+                        }
                         activityChatBinding.chatInputMessage.text.clear()
                     }
                 }

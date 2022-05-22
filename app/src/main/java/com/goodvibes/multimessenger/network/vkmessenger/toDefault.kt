@@ -28,19 +28,19 @@ fun toDefaultChat(
         img = R.mipmap.tg_icon,
         imgUri = when(conversationWithMessage.conversation.peer.type) {
             VKMessagesConversationPeerType.CHAT -> {
-                conversationWithMessage.conversation.chatSettings.photo?.photo200
+                conversationWithMessage.conversation.chatSettings.photo?.photo100
             }
             VKMessagesConversationPeerType.USER -> {
                 val profile = response.profiles?.firstOrNull {
                     it.id == conversationWithMessage.conversation.peer.id
                 }
-                profile?.photo200
+                profile?.photo100
             }
             VKMessagesConversationPeerType.GROUP -> {
                 val group = response.groups?.firstOrNull {
                     it.id == -conversationWithMessage.conversation.peer.id
                 }
-                group?.photo200
+                group?.photo100
             }
             else -> null
         },
