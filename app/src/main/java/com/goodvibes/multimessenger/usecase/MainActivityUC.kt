@@ -4,10 +4,7 @@ import com.example.testdb3.db.DBConst
 import com.example.testdb3.db.DBConst.RANDOM_END
 import com.example.testdb3.db.DBConst.RANDOM_START
 import com.goodvibes.multimessenger.MainActivity
-import com.goodvibes.multimessenger.datastructure.Chat
-import com.goodvibes.multimessenger.datastructure.Folder
-import com.goodvibes.multimessenger.datastructure.idTGFolder
-import com.goodvibes.multimessenger.datastructure.idVKFolder
+import com.goodvibes.multimessenger.datastructure.*
 import com.goodvibes.multimessenger.db.MyDBUseCase
 import com.goodvibes.multimessenger.network.Messenger
 import com.goodvibes.multimessenger.network.tgmessenger.Telegram
@@ -89,5 +86,21 @@ class MainActivityUC(_mainActivity: MainActivity, _vkMessenger: VK, _tgMessenger
 
     fun isChatInFolder(chat: Chat, folder: Folder) : Boolean {
         return true
+    }
+
+    fun startUpdateListener(callback: (Event) -> Unit) {
+        vk.startUpdateListener(callback)
+        tg.startUpdateListener(callback)
+    }
+
+    fun getChatByID(messenger: Messengers?, chatId: Long, callback: (Chat) -> Unit) {
+        when (messenger) {
+            Messengers.VK -> {
+                vk.getChatById(chatId, callback)
+            }
+            Messengers.TELEGRAM -> {
+                tg.getChatById(chatId, callback)
+            }
+        }
     }
 }

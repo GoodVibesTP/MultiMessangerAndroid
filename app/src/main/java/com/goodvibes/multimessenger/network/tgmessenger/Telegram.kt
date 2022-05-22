@@ -79,6 +79,7 @@ object Telegram : Messenger {
                 lastMessage.id <= chat.lastReadInboxMessageId
             }
         }
+        chat.photo
         return Chat(
             chatId = chat.id,
             img = R.mipmap.tg_icon,
@@ -88,7 +89,8 @@ object Telegram : Messenger {
             lastMessage = lastMessage,
             inRead = chat.lastReadInboxMessageId,
             outRead = chat.lastReadOutboxMessageId,
-            messenger = Messengers.TELEGRAM
+            messenger = Messengers.TELEGRAM,
+            unreadMessage = chat.unreadCount,
         )
     }
 
@@ -166,7 +168,14 @@ object Telegram : Messenger {
     override fun getUserId(): Long {
         return currentUserId
     }
-
+    fun downloadFile(file: TdApi.File) {
+        client.send(
+            TdApi.DownloadFile(
+                file.id, 1,0,0,true
+            ),
+            AuthorizationRequestHandler()
+        )
+    }
     override fun getAllChats(count: Int, first_chat: Int, callback: (MutableList<Chat>) -> Unit) {
         Log.d("MM_LOG", "getAllChats")
         GlobalScope.launch {

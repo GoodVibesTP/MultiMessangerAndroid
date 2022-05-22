@@ -25,12 +25,20 @@
                 android:id="@+id/include"
                 />
 
-        <ListView
+        <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+                xmlns:android="http://schemas.android.com/apk/res/android"
+                android:id="@+id/swipeContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+        <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/list_chats"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 tools:listitem="@layout/list_item_chats"
                 />
+        </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
+
     </LinearLayout>
 
         <com.google.android.material.navigation.NavigationView
