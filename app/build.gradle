@@ -42,7 +42,6 @@ android {
         lastestMaterialDrawerRelease = '9.0.0-rc01'
     }
 }
-
 dependencies {
     implementation "com.mikepenz:materialdrawer:9.0.0-rc01"
     implementation 'androidx.legacy:legacy-support-v4:1.0.0'
@@ -81,4 +80,6 @@ dependencies {
 
     // TDLib
     implementation fileTree(dir: 'libs', include: ['*.java'])
+
+    implementation "androidx.paging:paging-runtime:3.1.1"
 }
