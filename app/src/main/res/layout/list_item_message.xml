@@ -4,6 +4,7 @@
         xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="@color/white"
         >
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -16,6 +17,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             android:background="@drawable/current_user_message"
             android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
             >
         <TextView
                 android:id="@+id/chat_my_message"
@@ -59,6 +61,7 @@
             app:layout_constraintBottom_toBottomOf="parent"
             android:background="@drawable/other_user_message"
             android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
             >
         <TextView
                 android:id="@+id/chat_other_user_message"

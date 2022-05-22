@@ -201,11 +201,11 @@ object Telegram : Messenger {
     override fun getMessagesFromChat(
         chat_id: Long,
         count: Int,
-        first_msg: Int,
+        offset: Int,
         first_msg_id: Long,
         callback: (MutableList<Message>) -> Unit
     ) {
-        Log.d("TG_LOG", "$first_msg $count")
+        Log.d("TG_LOG", "$offset $count")
         if (haveAuthorization) {
             Log.d("MM_LOG", "getMessagesFromChat")
             val messageList: MutableList<Message> = mutableListOf()
@@ -360,7 +360,7 @@ object Telegram : Messenger {
             TdApi.AuthorizationStateWaitPhoneNumber.CONSTRUCTOR -> {
                 Log.d(LOG_TAG,
                     "onAuthorizationStateUpdated -> AuthorizationStateWaitPhoneNumber")
-//                val phoneNumber: String = "+79777569732"
+//                val phoneNumber: String = "+7your_phone_number"
 //                client.send(
 //                    TdApi.SetAuthenticationPhoneNumber(
 //                        phoneNumber,
@@ -630,6 +630,15 @@ object Telegram : Messenger {
                 }
                 TdApi.UpdateDeleteMessages.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateDeleteMessages")
+                    val updateDeleteMessages = tdObject as TdApi.UpdateDeleteMessages
+                    for (message_id in updateDeleteMessages.messageIds) {
+                        onEventsCallback(Event.DeleteMessage(
+                            chat_id = updateDeleteMessages.chatId,
+                            message_id = message_id,
+                            messenger = Messengers.TELEGRAM
+                            )
+                        )
+                    }
                 }
                 TdApi.UpdateChatReplyMarkup.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateChatReplyMarkup")

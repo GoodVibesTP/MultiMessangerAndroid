@@ -45,7 +45,7 @@ object VK : Messenger {
 
     private val vkClient = OriginalVKClient
 
-    private var token = "your_token"
+    private var token = "eb853229e58c68c4fdd11ae53cb992c0e340faa5e62ab30229bfc161bb33413f8f3de1d982d832abdcee8"
 
     private val permissions = arrayListOf<VKScope>()
 
@@ -54,20 +54,6 @@ object VK : Messenger {
             // token expired
         }
     }
-
-//    private val authLauncher = vkClient.login(activity) { result : VKAuthenticationResult ->
-//        when (result) {
-//            is VKAuthenticationResult.Success -> {
-//                // User passed authorization
-//                Log.d(LOG_TAG,"User passed authorization, token=${result.token.accessToken}")
-//            }
-//            is VKAuthenticationResult.Failed -> {
-//                // User didn't pass authorization
-//                Log.d(LOG_TAG,
-//                    "User didn't pass authorization, exception = ${result.exception}")
-//            }
-//        }
-//    }
 
     private const val LOG_TAG = "MultiMessenger_VK_logs"
     private val retrofit: Retrofit = Retrofit.Builder()
@@ -159,7 +145,7 @@ object VK : Messenger {
     override fun getMessagesFromChat(
         chat_id: Long,
         count: Int,
-        first_msg: Int,
+        offset: Int,
         first_msg_id: Long,
         callback: (MutableList<Message>) -> Unit
     ) {
@@ -168,7 +154,8 @@ object VK : Messenger {
             access_token = this.token,
             peer_id = chat_id,
             count = count,
-            offset = first_msg
+            offset = offset,
+            start_message_id = first_msg_id
         )
 
         callForVKRespond.enqueue(object : Callback<VKRespond<VKMessagesGetHistoryResponse>> {
@@ -596,6 +583,18 @@ object VK : Messenger {
                         )
                         for (updateItem in responseBody.updates) {
                             val event: Event? = when(updateItem[0].asInt) {
+                                VK_UPDATE.EVENTS.MESSAGE_FLAGS_STATED -> {
+                                    if (updateItem[VK_UPDATE.MESSAGE_FLAGS_STATED.FLAGS].asInt and 128 != 0) {
+                                        Event.DeleteMessage(
+                                            updateItem[VK_UPDATE.MESSAGE_FLAGS_STATED.MINOR_ID].asLong,
+                                            updateItem[VK_UPDATE.MESSAGE_FLAGS_STATED.MESSAGE_ID].asLong,
+                                            Messengers.VK
+                                        )
+                                    }
+                                    else {
+                                        Event.DefaultEvent()
+                                    }
+                                }
                                 VK_UPDATE.EVENTS.NEW_MESSAGE -> {
                                     if (updateItem.size > VK_UPDATE.NEW_MESSAGE.ADDITIONAL_FIELD) {
                                         val ADDITIONAL_FIELD = VK_UPDATE.NEW_MESSAGE.ADDITIONAL_FIELD

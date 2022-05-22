@@ -1,6 +1,12 @@
 package com.goodvibes.multimessenger.datastructure
 
 sealed class Event {
+    class DeleteMessage(
+        val chat_id: Long,
+        val message_id: Long,
+        val messenger: Messengers
+    ) : Event()
+
     class NewMessage(
         val message: Message,
         val direction: Direction
@@ -22,4 +28,6 @@ sealed class Event {
         val message_id: Long,
         val messenger: Messengers
     ) : Event()
+
+    class DefaultEvent() : Event()
 }

@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.goodvibes.multimessenger.R
@@ -13,44 +14,12 @@ import com.goodvibes.multimessenger.datastructure.Message
 
 
 class ListSingleChatAdapter(
-    ctx: Context,
-    val messages: MutableList<Message>
+    private val ctx: Context,
+    val messages: MutableList<Message>,
+    val onItemCheckStateChanged: (MutableSet<Long>) -> Unit
 ): RecyclerView.Adapter<ListSingleChatAdapter.ViewHolder>() {
+    internal val checkedItems: MutableSet<Long> = mutableSetOf()
     private val inflater = LayoutInflater.from(ctx)
-
-//    public constructor(ctx: Context, messages: MutableList<Message>) :
-//            super(ctx, R.layout.list_item_chats, messages){}
-//
-//    public fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
-//        var convertView_ = convertView;
-//        val message = getItem(position);
-//        if (convertView_ == null) {
-//            convertView_ = LayoutInflater.from(context).inflate(R.layout.list_item_message,
-//                parent,false);
-//        }
-//
-//        val layoutMessage: View
-//        val textViewTextMessage: View
-//        val textViewTime: View
-//        val layoutMessageToSetInvisible: View
-//        if (message!!.isMyMessage) {
-//            layoutMessage = convertView_!!.findViewById<ConstraintLayout>(R.id.chat_my_layout)
-//            textViewTextMessage = layoutMessage.findViewById<TextView>(R.id.chat_my_message)
-//            textViewTime = layoutMessage.findViewById<TextView>(R.id.chat_my_message_time)
-//            layoutMessageToSetInvisible = convertView_!!.findViewById<ConstraintLayout>(R.id.chat_other_user_layout)
-//        } else {
-//            layoutMessage = convertView_!!.findViewById<ConstraintLayout>(R.id.chat_other_user_layout)
-//            textViewTextMessage = layoutMessage.findViewById<TextView>(R.id.chat_other_user_message)
-//            textViewTime = layoutMessage.findViewById<TextView>(R.id.chat_other_user_message_time)
-//            layoutMessageToSetInvisible = convertView_!!.findViewById<ConstraintLayout>(R.id.chat_my_layout)
-//        }
-//
-//        textViewTextMessage.setText(message.text)
-//        textViewTime.setText(message.time)
-//        layoutMessageToSetInvisible.visibility = View.GONE
-//
-//        return convertView_;
-//    }
 
     override fun onCreateViewHolder(
         parent: ViewGroup,
@@ -79,20 +48,34 @@ class ListSingleChatAdapter(
             holder.layoutMessageOutgoing.visibility = View.GONE
             holder.unreadMarkerOutgoing.visibility = View.GONE
         }
+
+        if(checkedItems.contains(messages[position].id)) {
+            holder.view.background =
+                AppCompatResources.getDrawable(ctx, R.color.list_item_message_checked)
+        }
+        else {
+            holder.view.background =
+                AppCompatResources.getDrawable(ctx, R.color.list_item_message_unchecked)
+        }
     }
 
     override fun getItemCount(): Int {
         return messages.size
     }
 
-    class ViewHolder internal constructor(view: View) : RecyclerView.ViewHolder(view) {
+    inner class ViewHolder(
+        val view: View
+    ) : RecyclerView.ViewHolder(view) {
+        var itemChecked: Boolean = false
+
         internal val layoutMessageIngoing: ConstraintLayout
-        internal val layoutMessageOutgoing: ConstraintLayout
         internal val textViewTextMessageIngoing: TextView
-        internal val textViewTextMessageOutgoing: TextView
         internal val textViewTimeIngoing: TextView
-        internal val textViewTimeOutgoing: TextView
         internal val unreadMarkerIngoing: ImageView
+
+        internal val layoutMessageOutgoing: ConstraintLayout
+        internal val textViewTextMessageOutgoing: TextView
+        internal val textViewTimeOutgoing: TextView
         internal val unreadMarkerOutgoing: ImageView
 
         init {
@@ -105,6 +88,25 @@ class ListSingleChatAdapter(
             textViewTextMessageOutgoing = view.findViewById(R.id.chat_my_message)
             textViewTimeOutgoing = view.findViewById(R.id.chat_my_message_time)
             unreadMarkerOutgoing = view.findViewById(R.id.chat_my_message_unread_marker)
+
+            val listener = View.OnClickListener {
+                val itemPosition = absoluteAdapterPosition
+                val itemId = messages[itemPosition].id
+
+                itemChecked = if (!itemChecked) {
+                    checkedItems.add(itemId)
+                    true
+                } else {
+                    checkedItems.remove(itemId)
+                    false
+                }
+                onItemCheckStateChanged(checkedItems)
+
+                notifyItemChanged(itemPosition)
+            }
+
+            layoutMessageIngoing.setOnClickListener(listener)
+            layoutMessageOutgoing.setOnClickListener(listener)
         }
     }
 }

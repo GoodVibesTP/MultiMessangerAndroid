@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+            android:id="@+id/select_message_menu_reply"
+            android:title="select message reply"
+            android:icon="@drawable/ic_reply"
+            />
+
+    <item
+            android:id="@+id/select_message_menu_delete"
+            android:title="select message menu delete"
+            android:icon="@drawable/ic_delete_message"
+            />
+
+    <item
+            android:id="@+id/select_message_menu_resend"
+            android:title="select message resend"
+            android:icon="@drawable/ic_resend"
+            />
+
+</menu>

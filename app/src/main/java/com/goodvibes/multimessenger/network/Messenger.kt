@@ -21,7 +21,7 @@ interface Messenger {
     fun getMessagesFromChat(
         chat_id: Long,
         count: Int,
-        first_msg: Int = 0,
+        offset: Int = 0,
         first_msg_id: Long = 0,
         callback: (MutableList<Message>) -> Unit
     )

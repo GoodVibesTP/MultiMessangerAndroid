@@ -13,4 +13,6 @@
     <color name="my_message_unread_marker">#1B5E20</color>
     <color name="other_user_message">#4DB6AC</color>
     <color name="other_user_message_unread_marker">#004D40</color>
+    <color name="list_item_message_unchecked">#FFFFFF</color>
+    <color name="list_item_message_checked">#D2D2E6</color>
 </resources>

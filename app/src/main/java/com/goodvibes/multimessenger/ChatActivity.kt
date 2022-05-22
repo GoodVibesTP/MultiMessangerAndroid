@@ -1,11 +1,16 @@
 package com.goodvibes.multimessenger
 
 import android.annotation.SuppressLint
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.view.ActionMode
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -36,6 +41,14 @@ class ChatActivity : AppCompatActivity() {
     lateinit var usecase: ChatActivityUC
 
     lateinit var progressBarLoadMoreMessages: View
+
+    var actionMode: ActionMode? = null
+
+    private val onItemCheckStateChanged: (MutableSet<Long>) -> Unit = {
+        if (actionMode == null && it.size > 0) {
+            actionMode = startActionMode(ChatActivityActionModeCallback())
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -70,9 +83,11 @@ class ChatActivity : AppCompatActivity() {
                 usecase.sendMessage(message) { message_id ->
                     message.id = message_id
                     GlobalScope.launch(Dispatchers.Main) {
-                        listMessage.add(0, message)
-                        Log.d("MM_LOG", "send message ${message.id}")
-                        listMessageAdapter.notifyDataSetChanged()
+                        if (listMessage.lastOrNull { it.id == message_id } == null) {
+                            listMessage.add(0, message)
+                            Log.d("MM_LOG", "send message ${message.id}")
+                            listMessageAdapter.notifyDataSetChanged()
+                        }
                         activityChatBinding.chatInputMessage.text.clear()
                     }
                 }
@@ -85,7 +100,7 @@ class ChatActivity : AppCompatActivity() {
 
     fun initListMessage() {
         listMessage = mutableListOf()
-        listMessageAdapter = ListSingleChatAdapter(this@ChatActivity, listMessage)
+        listMessageAdapter = ListSingleChatAdapter(this@ChatActivity, listMessage, onItemCheckStateChanged)
         activityChatBinding.listMessage.adapter = listMessageAdapter
         activityChatBinding.listMessage.addOnScrollListener(OnScrollListenerChats())
         usecase.getMessageFromChat(currentChat, 50) { messages ->
@@ -102,6 +117,14 @@ class ChatActivity : AppCompatActivity() {
         }
         usecase.startUpdateListener(currentChat) { event ->
             when(event) {
+                is Event.DeleteMessage -> {
+                    if (event.chat_id == currentChat.chatId) {
+                        GlobalScope.launch(Dispatchers.Main) {
+                            listMessage.removeAll { it.id == event.message_id }
+                            listMessageAdapter.notifyDataSetChanged()
+                        }
+                    }
+                }
                 is Event.NewMessage -> {
                     if (event.message.chatId == currentChat.chatId) {
                         GlobalScope.launch(Dispatchers.Main) {
@@ -179,7 +202,6 @@ class ChatActivity : AppCompatActivity() {
                     usecase.getMessageFromChat(
                         chat = currentChat,
                         count = numberMessageOnPage,
-                        first_msg = numberLastMessage,
                         first_msg_id = listMessage.last().id
                     ) { messages ->
                         numberLastMessage += numberMessageOnPage
@@ -237,5 +259,37 @@ class ChatActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    inner class ChatActivityActionModeCallback : ActionMode.Callback {
+        override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+            mode?.menuInflater?.inflate(R.menu.select_message_menu, menu)
+
+            return true
+        }
+
+        override fun onPrepareActionMode(mode: ActionMode?, menu: Menu?): Boolean {
+            return false
+        }
+
+        override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
+            when (item?.itemId) {
+                R.id.select_message_menu_reply -> {
+
+                }
+                R.id.select_message_menu_delete -> {
+
+                }
+                R.id.select_message_menu_resend -> {
+
+                }
+            }
+            return false
+        }
+
+        override fun onDestroyActionMode(p0: ActionMode?) {
+            TODO("Not yet implemented")
+        }
+
     }
 }
