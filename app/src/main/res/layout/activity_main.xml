@@ -25,10 +25,11 @@
                 android:id="@+id/include"
                 />
 
-        <ListView
+        <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/list_chats"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 tools:listitem="@layout/list_item_chats"
                 />
     </LinearLayout>

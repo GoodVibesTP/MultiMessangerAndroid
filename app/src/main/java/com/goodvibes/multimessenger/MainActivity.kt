@@ -15,6 +15,8 @@ import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.drawerlayout.widget.DrawerLayout
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.example.testdb3.db.MyDBManager
 import com.goodvibes.multimessenger.databinding.ActivityMainBinding
 import com.goodvibes.multimessenger.datastructure.*
@@ -116,26 +118,10 @@ class MainActivity : AppCompatActivity() {
             GlobalScope.launch(Dispatchers.Main) {
                 numberLastChatVK = numberChatOnPage
                 allChats.addAll(chats)
-                listChatsAdapter = ListChatsAdapter(this@MainActivity, allChats);
+                listChatsAdapter = ListChatsAdapter(this@MainActivity, allChats, this@MainActivity);
                 activityMainBinding.listChats.setAdapter(listChatsAdapter);
-                activityMainBinding.listChats.setOnItemLongClickListener { parent, view, position, id ->
-                    if (mActionMode != null) {
-                        false
-                    }
-                    view.isSelected = true
-                    callback.setClickedView(position)
-                    mActionMode = startActionMode(callback)!!
-                    true
-                }
-                activityMainBinding.listChats.setOnScrollListener(OnScrollListenerChats())
-                activityMainBinding.listChats.setOnItemClickListener{parent, view, position, id ->
-                    Toast.makeText(this@MainActivity, position.toString(),
-                        Toast.LENGTH_LONG).show()
-                    val intent = Intent(this@MainActivity, ChatActivity::class.java)
-                    val chat = listChatsAdapter.getItem(position)
-                    intent.putExtra("Chat", chat)
-                    startActivity(intent)
-                }
+
+                activityMainBinding.listChats.addOnScrollListener(OnScrollListenerChats())
 
                 for (item in chats) {
                     dbUseCase.addChatsToPrimaryFolderIfNotExist(item)
@@ -143,34 +129,25 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        vk.startUpdateListener { event ->
-            when(event) {
-                is Event.NewMessage -> {
-                    Log.d("VK_LOG", "new incoming message: ${event.message}")
-                    for (i in allChats.indices) {
-                        if (allChats[i].chatId == event.message.chatId) {
-                            allChats[i].lastMessage = event.message
-                            val updatedChat = allChats.removeAt(i)
-                            allChats.add(0, updatedChat)
-                            break
-                        }
-                    }
-
-                    var listChatsAdapter: ListChatsAdapter = ListChatsAdapter(this@MainActivity, allChats);
-                    activityMainBinding.listChats.setAdapter(listChatsAdapter);
-                    activityMainBinding.listChats.setOnItemLongClickListener { parent, view, position, id ->
-                        if (mActionMode != null) {
-                            false
-                        }
-                        view.isSelected = true
-                        callback.setClickedView(position)
-                        mActionMode = startActionMode(callback)!!
-
-                        true
-                    }
-                }
-            }
-        }
+//        vk.startUpdateListener { event ->
+//            when(event) {
+//                is Event.NewMessage -> {
+//                    Log.d("VK_LOG", "new incoming message: ${event.message}")
+//                    for (i in allChats.indices) {
+//                        if (allChats[i].chatId == event.message.chatId) {
+//                            allChats[i].lastMessage = event.message
+//                            val updatedChat = allChats.removeAt(i)
+//                            allChats.add(0, updatedChat)
+//                            break
+//                        }
+//                    }
+//
+//                    var listChatsAdapter: ListChatsAdapter = ListChatsAdapter(this@MainActivity,
+//                        allChats, this@MainActivity);
+//                    activityMainBinding.listChats.setAdapter(listChatsAdapter);
+//                }
+//            }
+//        }
     }
 
 
@@ -207,7 +184,7 @@ class MainActivity : AppCompatActivity() {
         override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
             when (item?.itemId) {
                 R.id.select_chat_menu_delete -> {
-                    val chat = this@MainActivity.listChatsAdapter.getItem(this.mClickedViewPosition!!)
+                    val chat = this@MainActivity.listChatsAdapter.chats[this.mClickedViewPosition!!]
                     deleteChat(chat!!)
                     mode?.finish()
                     return true
@@ -216,7 +193,7 @@ class MainActivity : AppCompatActivity() {
                     val allFolders = useCase.getAllFolders()
 
                     val foldersAdapter = ListFoldersAdapter(this@MainActivity, allFolders)
-                    val chat = this@MainActivity.listChatsAdapter.getItem(this.mClickedViewPosition!!)
+                    val chat = this@MainActivity.listChatsAdapter.chats[this.mClickedViewPosition!!]
                     val dialog = SelectFolder(allFolders, foldersAdapter, chat!!, ::moveChatToFolder, ::addFolderAndMoveChat)
                     val manager = supportFragmentManager
                     dialog.show(manager, "Select folder")
@@ -231,27 +208,31 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    inner class OnScrollListenerChats : OnScrollListener {
-        override fun onScrollStateChanged(recyclerView: AbsListView?, newState: Int) {
-        }
+    inner class OnScrollListenerChats : RecyclerView.OnScrollListener()  {
+       override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+           super.onScrollStateChanged(recyclerView, newState)
+       }
 
-        override fun onScroll(view: AbsListView?, firstVisibleItem: Int,
-                              visibleItemCount: Int, totalItemCount: Int) {
-            if (!isLoadingChatVK &&  (firstVisibleItem + visibleItemCount == totalItemCount)) {
-                isLoadingChatVK = true
-                useCase.getAllChats(numberChatOnPage, numberLastChatVK) {chats ->
-                    numberLastChatVK += numberChatOnPage
-                    isLoadingChatVK = false
-                    listChatsAdapter.addAll(chats)
-
-                    for (item in chats) {
-                        dbUseCase.addChatsToPrimaryFolderIfNotExist(item)
-                    }
-                }
-
-            }
-        }
-    }
+        override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+           super.onScrolled(recyclerView, dx, dy)
+           val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+           val visibleItemCount = layoutManager.childCount
+           val totalItemCount = layoutManager.itemCount
+           val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
+           if (!isLoadingChatVK &&  (firstVisibleItemPosition + visibleItemCount >= totalItemCount)) {
+               isLoadingChatVK = true
+               useCase.getAllChats(numberChatOnPage, numberLastChatVK) {chats ->
+                   numberLastChatVK += numberChatOnPage
+                   isLoadingChatVK = false
+                   allChats.addAll(chats)
+                   listChatsAdapter.notifyDataSetChanged()
+                   for (item in chats) {
+                       dbUseCase.addChatsToPrimaryFolderIfNotExist(item)
+                   }
+               }
+           }
+       }
+   }
 
     override fun onDestroy() {
         super.onDestroy()
