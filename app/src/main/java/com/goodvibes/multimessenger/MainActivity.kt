@@ -118,6 +118,7 @@ class MainActivity : AppCompatActivity() {
             GlobalScope.launch(Dispatchers.Main) {
                 numberLastChatVK = numberChatOnPage
                 allChats.addAll(chats)
+                allChats.sortWith(ComparatorChats().reversed())
                 listChatsAdapter = ListChatsAdapter(this@MainActivity, allChats, this@MainActivity);
                 activityMainBinding.listChats.setAdapter(listChatsAdapter);
 
@@ -213,6 +214,7 @@ class MainActivity : AppCompatActivity() {
            super.onScrollStateChanged(recyclerView, newState)
        }
 
+        @RequiresApi(Build.VERSION_CODES.N)
         override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
            super.onScrolled(recyclerView, dx, dy)
            val layoutManager = recyclerView.layoutManager as LinearLayoutManager
@@ -225,12 +227,20 @@ class MainActivity : AppCompatActivity() {
                    numberLastChatVK += numberChatOnPage
                    isLoadingChatVK = false
                    allChats.addAll(chats)
+                   allChats.sortWith(ComparatorChats().reversed())
                    listChatsAdapter.notifyDataSetChanged()
                    for (item in chats) {
                        dbUseCase.addChatsToPrimaryFolderIfNotExist(item)
                    }
                }
            }
+       }
+   }
+
+   class ComparatorChats: Comparator<Chat> {
+       override fun compare(p0: Chat?, p1: Chat?): Int {
+           if (p0 == null || p1 == null) return 0
+           else return p0.lastMessage!!.date.compareTo(p1.lastMessage!!.date)
        }
    }
 

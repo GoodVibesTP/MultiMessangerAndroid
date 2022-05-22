@@ -79,13 +79,14 @@ class ListChatsAdapter(
 
         holder.textViewTitle.text = chat.title
         holder.textViewLastMessage.text = chat.lastMessage?.text
+        holder.bindListeners(position)
     }
 
     override fun getItemCount(): Int {
         return chats.size
     }
 
-    inner class ViewHolder internal constructor(view: View) : RecyclerView.ViewHolder(view) {
+    inner class ViewHolder internal constructor(var view: View) : RecyclerView.ViewHolder(view) {
         internal val imageViewChatAva: ImageView
         internal val imageViewMessenger: ImageView
         internal val textViewTitle: TextView
@@ -96,13 +97,15 @@ class ListChatsAdapter(
             imageViewMessenger = view.findViewById(R.id.chat_all_messenger_img)
             textViewTitle = view.findViewById(R.id.chat_all_title)
             textViewLastMessage = view.findViewById(R.id.last_message);
+        }
 
+        fun bindListeners(position: Int) {
             view.setOnLongClickListener{ view ->
                 if (mainActivity.mActionMode != null) {
                     false
                 }
                 view.isSelected = true
-                mainActivity.callback.setClickedView(adapterPosition)
+                mainActivity.callback.setClickedView(position)
                 mainActivity.mActionMode = mainActivity.startActionMode(mainActivity.callback)!!
                 true
             }
