@@ -286,6 +286,21 @@ object Telegram : Messenger {
         )
     }
 
+    override fun deleteMessages(
+        chat_id: Long,
+        message_ids: List<Long>,
+        callback: (List<Int>) -> Unit
+    ) {
+        client.send(
+            TdApi.DeleteMessages(
+                chat_id,
+                message_ids.toLongArray(),
+                false
+            ),
+            DefaultHandler()
+        )
+    }
+
     override fun markAsRead(
         peer_id: Long,
         message_ids: List<Long>?,

@@ -16,9 +16,9 @@ import com.goodvibes.multimessenger.datastructure.Message
 class ListSingleChatAdapter(
     private val ctx: Context,
     val messages: MutableList<Message>,
+    val checkedItems: MutableSet<Long>,
     val onItemCheckStateChanged: (MutableSet<Long>) -> Unit
 ): RecyclerView.Adapter<ListSingleChatAdapter.ViewHolder>() {
-    internal val checkedItems: MutableSet<Long> = mutableSetOf()
     private val inflater = LayoutInflater.from(ctx)
 
     override fun onCreateViewHolder(

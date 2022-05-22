@@ -25,6 +25,17 @@ class ChatActivityUC(_activityChat: ChatActivity) {
         }
     }
 
+    fun deleteMessages(chat: Chat, message_ids: List<Long>, callback: (List<Int>) -> Unit = { }) {
+        when(chat.messenger) {
+            Messengers.VK -> {
+                vk.deleteMessages(chat.chatId, message_ids, callback)
+            }
+            Messengers.TELEGRAM -> {
+                tg.deleteMessages(chat.chatId, message_ids, callback)
+            }
+        }
+    }
+
     fun getMessageFromChat(chat: Chat, count: Int, first_msg_id: Long = 0, callback: (MutableList<Message>) -> Unit) {
         when(chat.messenger) {
             Messengers.VK -> {

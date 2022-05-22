@@ -30,6 +30,8 @@ import java.util.*
 class ChatActivity : AppCompatActivity() {
     lateinit var currentChat: Chat
     var listMessage = Collections.synchronizedList(arrayListOf<Message>())
+    val checkedItems: MutableSet<Long>
+    var lastCheckedItemCount = 0
     lateinit var listMessageAdapter: ListSingleChatAdapter
     lateinit var toolbar: Toolbar
 
@@ -44,9 +46,22 @@ class ChatActivity : AppCompatActivity() {
 
     var actionMode: ActionMode? = null
 
-    private val onItemCheckStateChanged: (MutableSet<Long>) -> Unit = {
-        if (actionMode == null && it.size > 0) {
-            actionMode = startActionMode(ChatActivityActionModeCallback())
+    private val onItemCheckStateChanged: (MutableSet<Long>) -> Unit
+
+    init {
+        listMessage = mutableListOf()
+        checkedItems = mutableSetOf()
+        onItemCheckStateChanged = {
+            Log.d("MM_LOG", "callOnItemCheckStateChanged")
+            if (lastCheckedItemCount == 0 && it.size > 0) {
+                actionMode = startActionMode(ChatActivityActionModeCallback(checkedItems))
+                Log.d("MM_LOG", "startActionMode")
+            }
+            else if (lastCheckedItemCount > 0 && it.size == 0) {
+                actionMode?.finish()
+                Log.d("MM_LOG", "finishActionMode")
+            }
+            lastCheckedItemCount = it.size
         }
     }
 
@@ -57,10 +72,10 @@ class ChatActivity : AppCompatActivity() {
 
         currentChat = intent.extras!!.get("Chat") as Chat
         usecase = ChatActivityUC(this)
-        toolbar = findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar)
         toolbar.title = currentChat.title
-        setSupportActionBar(toolbar);
-        supportActionBar?.setDisplayHomeAsUpEnabled(true);
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationOnClickListener{
             finish()
         }
@@ -99,8 +114,12 @@ class ChatActivity : AppCompatActivity() {
 
 
     fun initListMessage() {
-        listMessage = mutableListOf()
-        listMessageAdapter = ListSingleChatAdapter(this@ChatActivity, listMessage, onItemCheckStateChanged)
+        listMessageAdapter = ListSingleChatAdapter(
+            this@ChatActivity,
+            listMessage,
+            checkedItems,
+            onItemCheckStateChanged
+        )
         activityChatBinding.listMessage.adapter = listMessageAdapter
         activityChatBinding.listMessage.addOnScrollListener(OnScrollListenerChats())
         usecase.getMessageFromChat(currentChat, 50) { messages ->
@@ -261,9 +280,11 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
-    inner class ChatActivityActionModeCallback : ActionMode.Callback {
-        override fun onCreateActionMode(mode: ActionMode?, menu: Menu?): Boolean {
-            mode?.menuInflater?.inflate(R.menu.select_message_menu, menu)
+    inner class ChatActivityActionModeCallback(
+        val checkedItems: MutableSet<Long>
+    ) : ActionMode.Callback {
+        override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
+            mode.menuInflater.inflate(R.menu.select_message_menu, menu)
 
             return true
         }
@@ -278,7 +299,15 @@ class ChatActivity : AppCompatActivity() {
 
                 }
                 R.id.select_message_menu_delete -> {
-
+                    usecase.deleteMessages(currentChat, checkedItems.toList())
+                    listMessage.removeAll { checkedItems.contains(it.id) }
+                    checkedItems.clear()
+                    listMessageAdapter.notifyDataSetChanged()
+                    lastCheckedItemCount = 0
+                    actionMode?.finish()
+                    if (currentChat.lastMessage?.id != listMessage[0].id) {
+                        currentChat.lastMessage = listMessage[0]
+                    }
                 }
                 R.id.select_message_menu_resend -> {
 
@@ -287,8 +316,8 @@ class ChatActivity : AppCompatActivity() {
             return false
         }
 
-        override fun onDestroyActionMode(p0: ActionMode?) {
-            TODO("Not yet implemented")
+        override fun onDestroyActionMode(mode: ActionMode?) {
+            actionMode = null
         }
 
     }

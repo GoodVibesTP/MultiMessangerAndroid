@@ -37,12 +37,18 @@ interface Messenger {
         callback: (Long) -> Unit = { }
     )
 
+    fun deleteMessages(
+        chat_id: Long,
+        message_ids: List<Long>,
+        callback: (List<Int>) -> Unit = { }
+    )
+
     fun markAsRead(
         peer_id: Long,
         message_ids: List<Long>?,
         start_message_id: Long?,
         mark_conversation_as_read: Boolean = false,
-        callback: (Int) -> Unit
+        callback: (Int) -> Unit = { }
     )
 
     fun startUpdateListener(

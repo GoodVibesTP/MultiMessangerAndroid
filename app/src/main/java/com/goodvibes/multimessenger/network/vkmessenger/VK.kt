@@ -341,6 +341,64 @@ object VK : Messenger {
         Log.d(LOG_TAG, "$methodName request: ${callForVKRespond.request()}")
     }
 
+    override fun deleteMessages(
+        chat_id: Long,
+        message_ids: List<Long>,
+        callback: (List<Int>) -> Unit
+    ) {
+        val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
+        val callForVKRespond: Call<VKRespond<Any>> = messagesService.delete(
+            access_token = this.token,
+            peer_id = chat_id,
+            message_ids = message_ids.joinToString(separator = ",")
+        )
+
+        callForVKRespond.enqueue(object : Callback<VKRespond<Any>> {
+            override fun onResponse(
+                call: Call<VKRespond<Any>>,
+                response: Response<VKRespond<Any>>
+            ) {
+                Log.d(LOG_TAG, "$methodName response code: ${response.code()}")
+                if (response.isSuccessful) {
+                    val responseBody = response.body()
+                    when {
+                        responseBody == null -> {
+                            Log.d(LOG_TAG, "$methodName successful, but response.body() is null")
+                        }
+                        responseBody.response != null -> {
+                            Log.d(
+                                LOG_TAG,
+                                "$methodName successful"
+                            )
+                            callback(listOf())
+                        }
+                        responseBody.error != null -> {
+                            Log.d(
+                                LOG_TAG,
+                                "$methodName error ${responseBody.error.errorCode}: ${responseBody.error.errorMsg}"
+                            )
+                        }
+                        else -> {
+                            Log.d(
+                                LOG_TAG,
+                                "$methodName response is null && error is null"
+                            )
+                        }
+                    }
+                }
+            }
+
+            override fun onFailure(
+                call: Call<VKRespond<Any>>,
+                t: Throwable
+            ) {
+                Log.d(LOG_TAG, "$methodName failure: $t")
+            }
+        })
+
+        Log.d(LOG_TAG, "$methodName request: ${callForVKRespond.request()}")
+    }
+
     override fun markAsRead(
         peer_id: Long,
         message_ids: List<Long>?,
