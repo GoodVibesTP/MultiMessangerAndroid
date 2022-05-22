@@ -16,5 +16,4 @@ data class Chat(
     var inRead: Long,
     var outRead: Long,
     var unreadMessage: Int?,
-    var photoTg: TdApi.File? = null
 ) : Serializable

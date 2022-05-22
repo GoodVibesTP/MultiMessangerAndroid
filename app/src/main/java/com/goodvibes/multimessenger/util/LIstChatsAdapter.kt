@@ -79,11 +79,9 @@ class ListChatsAdapter(
         if (chat.imgUri != null) {
             Picasso.get().load(chat.imgUri).into(holder.imageViewChatAva)
         } else {
-            if (chat.photoTg != null) {
+
                 holder.imageViewChatAva.setImageResource(R.drawable.images)
-            } else {
-                holder.imageViewChatAva.setImageResource(R.drawable.images)
-            }
+
         }
 
         holder.textViewTitle.text = chat.title

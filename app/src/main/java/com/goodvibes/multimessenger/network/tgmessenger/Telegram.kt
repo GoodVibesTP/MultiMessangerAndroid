@@ -91,7 +91,6 @@ object Telegram : Messenger {
             outRead = chat.lastReadOutboxMessageId,
             messenger = Messengers.TELEGRAM,
             unreadMessage = chat.unreadCount,
-            photoTg = chat.photo?.small
         )
     }
 
