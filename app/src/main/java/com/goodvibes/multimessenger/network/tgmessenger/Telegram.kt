@@ -265,16 +265,37 @@ object Telegram : Messenger {
     }
 
     override fun sendMessage(
-        user_id: Long,
+        chat_id: Long,
         text: String,
         callback: (Long) -> Unit
     ) {
         client.send(
             TdApi.SendMessage(
-                user_id,
+                chat_id,
                 0,
                 0,
                 null,
+                null,
+                TdApi.InputMessageText(
+                    TdApi.FormattedText(text, null),
+                    false,
+                    false
+                )
+            ),
+            SendMessageResultHandler(callback)
+        )
+    }
+
+    override fun editMessage(
+        chat_id: Long,
+        message_id: Long,
+        text: String,
+        callback: (Long) -> Unit
+    ) {
+        client.send(
+            TdApi.EditMessageText(
+                chat_id,
+                message_id,
                 null,
                 TdApi.InputMessageText(
                     TdApi.FormattedText(text, null),
@@ -623,6 +644,23 @@ object Telegram : Messenger {
                 }
                 TdApi.UpdateMessageContent.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateMessageContent")
+                    val updateMessageContent = tdObject as TdApi.UpdateMessageContent
+                    if (registeredForUpdates) {
+                        onEventsCallback(Event.EditMessageContent(
+                            chat_id = updateMessageContent.chatId,
+                            message_id = updateMessageContent.messageId,
+                            text = when(updateMessageContent.newContent.constructor) {
+                                TdApi.MessageText.CONSTRUCTOR -> {
+                                    (updateMessageContent.newContent as TdApi.MessageText).text.text
+                                }
+                                else -> {
+                                    "Текст сообщения не поддерживается данной версией приложения"
+                                }
+                            },
+                            messenger = Messengers.TELEGRAM
+                            )
+                        )
+                    }
                 }
                 TdApi.UpdateNewMessage.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateNewMessage, $tdObject")

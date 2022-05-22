@@ -12,6 +12,7 @@ import android.view.View
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.widget.Toolbar
+import androidx.core.view.size
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.goodvibes.multimessenger.datastructure.Chat
@@ -48,20 +49,28 @@ class ChatActivity : AppCompatActivity() {
 
     private val onItemCheckStateChanged: (MutableSet<Long>) -> Unit
 
+    var modeEditMessage = false
+    var currentEditMessageId: Long = 0
+
     init {
         listMessage = mutableListOf()
         checkedItems = mutableSetOf()
-        onItemCheckStateChanged = {
+        onItemCheckStateChanged = {  checkState ->
             Log.d("MM_LOG", "callOnItemCheckStateChanged")
-            if (lastCheckedItemCount == 0 && it.size > 0) {
+            if (lastCheckedItemCount == 0 && checkState.size > 0) {
                 actionMode = startActionMode(ChatActivityActionModeCallback(checkedItems))
                 Log.d("MM_LOG", "startActionMode")
             }
-            else if (lastCheckedItemCount > 0 && it.size == 0) {
+            else if (lastCheckedItemCount > 0 && checkState.size == 0) {
                 actionMode?.finish()
                 Log.d("MM_LOG", "finishActionMode")
             }
-            lastCheckedItemCount = it.size
+            Log.d("MM_LOG", "${actionMode?.menu?.findItem(R.id.select_message_menu_reply)}, ${checkState.size}")
+            actionMode?.menu?.findItem(R.id.select_message_menu_reply)?.isVisible =
+                checkState.size == 1
+            actionMode?.menu?.findItem(R.id.select_message_menu_edit)?.isVisible =
+                checkState.size == 1 && listMessage.findLast { it.id == checkState.first() }?.isMyMessage ?: false
+            lastCheckedItemCount = checkState.size
         }
     }
 
@@ -90,21 +99,41 @@ class ChatActivity : AppCompatActivity() {
                     text = messageString,
                     chatId = currentChat.chatId,
                     date = dateTime.toInt(),
-                    time = SimpleDateFormat("dd/M/yyyy HH:mm:ss", Locale("ru", "ru")).format(dateTime),
+                    time = SimpleDateFormat("dd/M/yyyy HH:mm:ss", Locale("ru", "ru")).format(
+                        dateTime
+                    ),
                     isMyMessage = true,
                     read = false,
                     messenger = currentChat.messenger
                 )
-                usecase.sendMessage(message) { message_id ->
-                    message.id = message_id
-                    GlobalScope.launch(Dispatchers.Main) {
-                        if (listMessage.lastOrNull { it.id == message_id } == null) {
-                            listMessage.add(0, message)
-                            Log.d("MM_LOG", "send message ${message.id}")
+                if (!modeEditMessage) {
+                    usecase.sendMessage(message) { message_id ->
+                        message.id = message_id
+                        GlobalScope.launch(Dispatchers.Main) {
+                            if (listMessage.lastOrNull { it.id == message_id } == null) {
+                                listMessage.add(0, message)
+                                Log.d("MM_LOG", "send message ${message.id}")
+                                listMessageAdapter.notifyDataSetChanged()
+                            }
+                            activityChatBinding.chatInputMessage.text.clear()
+                        }
+                    }
+                }
+                else {
+                    message.id = currentEditMessageId
+                    usecase.editMessage(message) { _ ->
+                        GlobalScope.launch(Dispatchers.Main) {
+                            val position = listMessage.indexOfFirst { it.id == message.id }
+                            if (position >= 0) {
+                                listMessage[position] = message
+                                listMessageAdapter.notifyDataSetChanged()
+                            }
+
+                            activityChatBinding.chatInputMessage.text.clear()
                             listMessageAdapter.notifyDataSetChanged()
                         }
-                        activityChatBinding.chatInputMessage.text.clear()
                     }
+                    modeEditMessage = false
                 }
             }
         }
@@ -152,6 +181,26 @@ class ChatActivity : AppCompatActivity() {
                                 listMessage.add(0, event.message)
                                 listMessageAdapter.notifyDataSetChanged()
                             }
+                        }
+                    }
+                }
+                is Event.EditMessage -> {
+                    if (currentChat.chatId == event.message.chatId) {
+                        GlobalScope.launch(Dispatchers.Main) {
+                            val position = listMessage.indexOfFirst { it.id == event.message.id }
+                            if (position >= 0) {
+                                listMessage[position] = event.message
+                                listMessageAdapter.notifyDataSetChanged()
+                            }
+                        }
+                    }
+                }
+                is Event.EditMessageContent -> {
+                    if (currentChat.chatId == event.chat_id) {
+                        GlobalScope.launch(Dispatchers.Main) {
+                            val messageToEdit = listMessage.firstOrNull { it.id == event.message_id }
+                            messageToEdit?.text = event.text
+                            listMessageAdapter.notifyDataSetChanged()
                         }
                     }
                 }
@@ -285,7 +334,6 @@ class ChatActivity : AppCompatActivity() {
     ) : ActionMode.Callback {
         override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
             mode.menuInflater.inflate(R.menu.select_message_menu, menu)
-
             return true
         }
 
@@ -295,6 +343,17 @@ class ChatActivity : AppCompatActivity() {
 
         override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
             when (item?.itemId) {
+                R.id.select_message_menu_edit -> {
+                    val messageToEdit = listMessage.findLast { it.id == checkedItems.first() }
+                    checkedItems.clear()
+                    lastCheckedItemCount = 0
+                    actionMode?.finish()
+                    listMessageAdapter.notifyDataSetChanged()
+
+                    activityChatBinding.chatInputMessage.setText(messageToEdit?.text ?: "")
+                    modeEditMessage = true
+                    currentEditMessageId = messageToEdit?.id ?: 0
+                }
                 R.id.select_message_menu_reply -> {
 
                 }
@@ -302,12 +361,12 @@ class ChatActivity : AppCompatActivity() {
                     usecase.deleteMessages(currentChat, checkedItems.toList())
                     listMessage.removeAll { checkedItems.contains(it.id) }
                     checkedItems.clear()
-                    listMessageAdapter.notifyDataSetChanged()
                     lastCheckedItemCount = 0
                     actionMode?.finish()
                     if (currentChat.lastMessage?.id != listMessage[0].id) {
                         currentChat.lastMessage = listMessage[0]
                     }
+                    listMessageAdapter.notifyDataSetChanged()
                 }
                 R.id.select_message_menu_resend -> {
 

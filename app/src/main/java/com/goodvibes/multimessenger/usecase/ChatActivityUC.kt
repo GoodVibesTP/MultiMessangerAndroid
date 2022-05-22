@@ -25,6 +25,17 @@ class ChatActivityUC(_activityChat: ChatActivity) {
         }
     }
 
+    fun editMessage(message: Message, callback: (Long) -> Unit = { }) {
+        when(message.messenger) {
+            Messengers.VK -> {
+                vk.editMessage(message.chatId, message.id, message.text, callback)
+            }
+            Messengers.TELEGRAM -> {
+                tg.editMessage(message.chatId, message.id, message.text, callback)
+            }
+        }
+    }
+
     fun deleteMessages(chat: Chat, message_ids: List<Long>, callback: (List<Int>) -> Unit = { }) {
         when(chat.messenger) {
             Messengers.VK -> {

@@ -284,14 +284,74 @@ object VK : Messenger {
     }
 
     override fun sendMessage(
-        user_id: Long,
+        chat_id: Long,
         text: String,
         callback: (Long) -> Unit
     ) {
         val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
         val callForVKRespond: Call<VKRespond<Long>> = messagesService.send(
             access_token = this.token,
-            peer_id = user_id,
+            peer_id = chat_id,
+            message = text
+        )
+
+        callForVKRespond.enqueue(object : Callback<VKRespond<Long>> {
+            override fun onResponse(
+                call: Call<VKRespond<Long>>,
+                response: Response<VKRespond<Long>>
+            ) {
+                Log.d(LOG_TAG, "$methodName response code: ${response.code()}")
+                if (response.isSuccessful) {
+                    val responseBody = response.body()
+                    when {
+                        responseBody == null -> {
+                            Log.d(LOG_TAG, "$methodName successful, but response.body() is null")
+                        }
+                        responseBody.response != null -> {
+                            Log.d(
+                                LOG_TAG,
+                                "$methodName successful"
+                            )
+                            callback(responseBody.response)
+                        }
+                        responseBody.error != null -> {
+                            Log.d(
+                                LOG_TAG,
+                                "$methodName error ${responseBody.error.errorCode}: ${responseBody.error.errorMsg}"
+                            )
+                        }
+                        else -> {
+                            Log.d(
+                                LOG_TAG,
+                                "$methodName response is null && error is null"
+                            )
+                        }
+                    }
+                }
+            }
+
+            override fun onFailure(
+                call: Call<VKRespond<Long>>,
+                t: Throwable
+            ) {
+                Log.d(LOG_TAG, "$methodName failure: $t")
+            }
+        })
+
+        Log.d(LOG_TAG, "$methodName request: ${callForVKRespond.request()}")
+    }
+
+    override fun editMessage(
+        chat_id: Long,
+        message_id: Long,
+        text: String,
+        callback: (Long) -> Unit
+    ) {
+        val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
+        val callForVKRespond: Call<VKRespond<Long>> = messagesService.edit(
+            access_token = this.token,
+            peer_id = chat_id,
+            message_id = message_id,
             message = text
         )
 
@@ -685,6 +745,34 @@ object VK : Messenger {
                                         else {
                                             Event.NewMessage.Direction.OUTGOING
                                         }
+                                    )
+                                }
+                                VK_UPDATE.EVENTS.MESSAGE_EDITED -> {
+                                    if (updateItem.size > VK_UPDATE.NEW_MESSAGE.ADDITIONAL_FIELD) {
+                                        val ADDITIONAL_FIELD = VK_UPDATE.NEW_MESSAGE.ADDITIONAL_FIELD
+                                        if (updateItem[ADDITIONAL_FIELD].isJsonObject) {
+                                            updateItem[ADDITIONAL_FIELD].asJsonObject.get("fwd")?.asString
+                                        }
+                                        else {
+                                            Log.d(LOG_TAG, "$methodName field $ADDITIONAL_FIELD exists, " +
+                                                    "but isJsonObject = false")
+                                        }
+                                    }
+                                    val datetime = (System.currentTimeMillis() / 1000L).toInt()
+                                    Event.EditMessage(
+                                        message = Message(
+                                            id = updateItem[VK_UPDATE.NEW_MESSAGE.MESSAGE_ID].asLong,
+                                            chatId = updateItem[VK_UPDATE.NEW_MESSAGE.MINOR_ID].asLong,
+                                            userId = updateItem[VK_UPDATE.NEW_MESSAGE.MINOR_ID].asLong,
+                                            text = updateItem[VK_UPDATE.NEW_MESSAGE.TEXT].asString,
+                                            isMyMessage = updateItem[VK_UPDATE.NEW_MESSAGE.FLAGS].asInt and 2 != 0,
+                                            read = false,
+                                            date = datetime,
+                                            time = dateFormat.format(datetime * 1000L),
+                                            fwdMessages = null,
+                                            replyTo = null,
+                                            messenger = Messengers.VK
+                                        )
                                     )
                                 }
                                 VK_UPDATE.EVENTS.READ_INGOING -> {

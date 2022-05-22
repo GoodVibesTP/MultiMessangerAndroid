@@ -32,7 +32,14 @@ interface Messenger {
     )
 
     fun sendMessage(
-        user_id: Long,
+        chat_id: Long,
+        text: String,
+        callback: (Long) -> Unit = { }
+    )
+
+    fun editMessage(
+        chat_id: Long,
+        message_id: Long,
         text: String,
         callback: (Long) -> Unit = { }
     )

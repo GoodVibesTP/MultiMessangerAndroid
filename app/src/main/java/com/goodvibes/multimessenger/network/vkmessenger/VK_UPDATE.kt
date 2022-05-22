@@ -31,6 +31,14 @@ internal object VK_UPDATE {
         const val ADDITIONAL_FIELD = 7
     }
 
+    object MESSAGE_EDITED {
+        const val MESSAGE_ID = 1
+        const val FLAGS = 2
+        const val MINOR_ID = 3
+        const val TEXT = 5
+        const val ADDITIONAL_FIELD = 7
+    }
+
     object READ_INGOING {
         const val PEER_ID = 1
         const val MESSAGE_ID = 2

@@ -39,6 +39,14 @@ interface VKMessagesApiService {
         @Query("random_id") random_id: Int = 0
     ): Call<VKRespond<Long>>
 
+    @GET("method/messages.edit?v=5.131")
+    fun edit(
+        @Query("access_token") access_token: String,
+        @Query("peer_id") peer_id: Long,
+        @Query("message_id") message_id: Long,
+        @Query("message") message: String
+    ): Call<VKRespond<Long>>
+
     @GET("method/messages.delete?v=5.131")
     fun delete(
         @Query("access_token") access_token: String,

@@ -7,6 +7,17 @@ sealed class Event {
         val messenger: Messengers
     ) : Event()
 
+    class EditMessage(
+        val message: Message
+    ) : Event()
+
+    class EditMessageContent(
+        val chat_id: Long,
+        val message_id: Long,
+        val text: String,
+        val messenger: Messengers
+    ) : Event()
+
     class NewMessage(
         val message: Message,
         val direction: Direction
