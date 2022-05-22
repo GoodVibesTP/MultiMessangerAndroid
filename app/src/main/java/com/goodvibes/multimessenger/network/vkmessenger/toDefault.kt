@@ -71,7 +71,8 @@ fun toDefaultChat(
         messenger = Messengers.VK,
         lastMessage = lastMessage,
         inRead = conversationWithMessage.conversation.inRead,
-        outRead = conversationWithMessage.conversation.outRead
+        outRead = conversationWithMessage.conversation.outRead,
+        unreadMessage = conversationWithMessage.conversation.unreadCount
     )
 }
 
@@ -138,7 +139,8 @@ fun toDefaultChat(
         messenger = Messengers.VK,
         lastMessage = lastMessage,
         inRead = conversationWithMessage.conversation.inRead,
-        outRead = conversationWithMessage.conversation.outRead
+        outRead = conversationWithMessage.conversation.outRead,
+        unreadMessage = conversationWithMessage.conversation.unreadCount
     )
 }
 

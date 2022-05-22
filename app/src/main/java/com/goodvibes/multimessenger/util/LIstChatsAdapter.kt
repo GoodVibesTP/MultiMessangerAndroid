@@ -79,6 +79,8 @@ class ListChatsAdapter(
 
         holder.textViewTitle.text = chat.title
         holder.textViewLastMessage.text = chat.lastMessage?.text
+        holder.textViewCountUnreadMessage.text = chat.unreadMessage.toString()
+
         holder.bindListeners(position)
     }
 
@@ -91,12 +93,14 @@ class ListChatsAdapter(
         internal val imageViewMessenger: ImageView
         internal val textViewTitle: TextView
         internal val textViewLastMessage: TextView
+        internal val textViewCountUnreadMessage: TextView
 
         init {
             imageViewChatAva = view.findViewById(R.id.chat_all_image);
             imageViewMessenger = view.findViewById(R.id.chat_all_messenger_img)
             textViewTitle = view.findViewById(R.id.chat_all_title)
             textViewLastMessage = view.findViewById(R.id.last_message);
+            textViewCountUnreadMessage = view.findViewById(R.id.chat_all_message_unread)
         }
 
         fun bindListeners(position: Int) {

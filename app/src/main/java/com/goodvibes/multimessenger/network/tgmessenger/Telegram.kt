@@ -88,7 +88,8 @@ object Telegram : Messenger {
             lastMessage = lastMessage,
             inRead = chat.lastReadInboxMessageId,
             outRead = chat.lastReadOutboxMessageId,
-            messenger = Messengers.TELEGRAM
+            messenger = Messengers.TELEGRAM,
+            unreadMessage = chat.unreadCount
         )
     }
 
