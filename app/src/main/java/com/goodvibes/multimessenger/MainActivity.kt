@@ -7,8 +7,6 @@ import android.util.Log
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.AbsListView
-import android.widget.AbsListView.OnScrollListener
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
@@ -17,9 +15,14 @@ import androidx.appcompat.widget.Toolbar
 import androidx.drawerlayout.widget.DrawerLayout
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout.OnRefreshListener
 import com.example.testdb3.db.MyDBManager
 import com.goodvibes.multimessenger.databinding.ActivityMainBinding
-import com.goodvibes.multimessenger.datastructure.*
+import com.goodvibes.multimessenger.datastructure.Chat
+import com.goodvibes.multimessenger.datastructure.Event
+import com.goodvibes.multimessenger.datastructure.Folder
+import com.goodvibes.multimessenger.datastructure.idAllFolder
 import com.goodvibes.multimessenger.db.MyDBUseCase
 import com.goodvibes.multimessenger.dialog.SelectFolder
 import com.goodvibes.multimessenger.network.tgmessenger.Telegram
@@ -30,6 +33,7 @@ import com.google.android.material.navigation.NavigationView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+
 
 class MainActivity : AppCompatActivity() {
     lateinit var activityMainBinding : ActivityMainBinding;
@@ -55,6 +59,8 @@ class MainActivity : AppCompatActivity() {
 
     var allChats: MutableList<Chat> = mutableListOf()
 
+    private var swipeContainer: SwipeRefreshLayout? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
         vk.init(this)
@@ -71,6 +77,7 @@ class MainActivity : AppCompatActivity() {
         myDbManager.openDb()
         dbUseCase.addPrimaryFolders()
 
+        initSwipeRefresh()
         initMenu()
         initChatsAllAdapter()
 
@@ -117,35 +124,41 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-//TODO: ТУТ ОПРЕДЕЛЕННО НУЖНО ВЫНЕСТИ В ФУНКЦИЮ ИНИН КАЛЛБЭКА
+    private fun initSwipeRefresh() {
+        swipeContainer = findViewById(R.id.swipeContainer);
+        swipeContainer?.setOnRefreshListener(OnRefreshListener {
+            allChats.clear()
+            numberLastChat = 0
+            getStartChats()
+        })
+    }
+
     @RequiresApi(Build.VERSION_CODES.M)
     private fun initChatsAllAdapter() {
     allChats = mutableListOf()
     listChatsAdapter = ListChatsAdapter(this@MainActivity, allChats, this@MainActivity);
     activityMainBinding.listChats.setAdapter(listChatsAdapter);
-
-//        vk.startUpdateListener { event ->
-//            when(event) {
-//                is Event.NewMessage -> {
-//                    Log.d("VK_LOG", "new incoming message: ${event.message}")
-//                    for (i in allChats.indices) {
-//                        if (allChats[i].chatId == event.message.chatId) {
-//                            allChats[i].lastMessage = event.message
-//                            val updatedChat = allChats.removeAt(i)
-//                            allChats.add(0, updatedChat)
-//                            break
-//                        }
-//                    }
-//
-//                    var listChatsAdapter: ListChatsAdapter = ListChatsAdapter(this@MainActivity,
-//                        allChats, this@MainActivity);
-//                    activityMainBinding.listChats.setAdapter(listChatsAdapter);
-//                }
-//            }
-//        }
+    useCase.startUpdateListener { event ->
+        when(event) {
+            is Event.NewMessage -> {
+                useCase.getChatByID(event.message.messenger, event.message.chatId){
+                    chat: Chat ->
+                    if (allChats.contains(chat)) {
+                        allChats.remove(chat)
+                        allChats.add(0, chat)
+                    } else {
+                        allChats.add(0, chat)
+                    }
+                    listChatsAdapter.notifyDataSetChanged()
+                }
+                Log.d("VK_LOG", "new incoming message: ${event.message}")
+            }
+        }
+    }
     }
 
     private fun getStartChats() {
+        swipeContainer?.setRefreshing(true);
         useCase.getAllChats(numberChatOnPage, 0) { chats ->
             GlobalScope.launch(Dispatchers.Main) {
                 numberLastChat = numberChatOnPage
@@ -158,6 +171,7 @@ class MainActivity : AppCompatActivity() {
                 for (item in chats) {
                     dbUseCase.addChatsToPrimaryFolderIfNotExist(item)
                 }
+                swipeContainer?.setRefreshing(false);
             }
         }
     }
