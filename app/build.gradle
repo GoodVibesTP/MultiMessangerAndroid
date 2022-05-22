@@ -81,4 +81,6 @@ dependencies {
 
     // TDLib
     implementation fileTree(dir: 'libs', include: ['*.java'])
+
+    implementation 'com.squareup.picasso:picasso:2.8'
 }

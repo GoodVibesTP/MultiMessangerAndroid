@@ -1,5 +1,7 @@
 package com.goodvibes.multimessenger.datastructure
 
+import android.graphics.Bitmap
+import org.drinkless.td.libcore.telegram.TdApi
 import java.io.Serializable
 
 data class Chat(
@@ -13,5 +15,6 @@ data class Chat(
     var folder: Folder = Folder(-100,"empty",),
     var inRead: Long,
     var outRead: Long,
-    var unreadMessage: Int?
+    var unreadMessage: Int?,
+    var photoTg: TdApi.File? = null
 ) : Serializable

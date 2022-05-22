@@ -1,13 +1,16 @@
 package com.goodvibes.multimessenger.network.vkmessenger
 
+import android.graphics.Bitmap
 import com.goodvibes.multimessenger.R
 import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.ChatType
 import com.goodvibes.multimessenger.datastructure.Message
 import com.goodvibes.multimessenger.datastructure.Messengers
 import com.goodvibes.multimessenger.network.vkmessenger.dto.*
+import com.squareup.picasso.NetworkPolicy
+import com.squareup.picasso.Picasso
 import java.util.*
-import kotlin.collections.ArrayList
+
 
 fun toDefaultChat(
     conversationWithMessage: VKMessagesConversationWithMessage,
@@ -23,9 +26,10 @@ fun toDefaultChat(
             lastMessage.id <= conversationWithMessage.conversation.inRead
         }
     }
+
     return Chat(
         chatId = conversationWithMessage.conversation.peer.id,
-        img = R.mipmap.tg_icon,
+        img = com.goodvibes.multimessenger.R.mipmap.tg_icon,
         imgUri = when(conversationWithMessage.conversation.peer.type) {
             VKMessagesConversationPeerType.CHAT -> {
                 conversationWithMessage.conversation.chatSettings.photo?.photo100

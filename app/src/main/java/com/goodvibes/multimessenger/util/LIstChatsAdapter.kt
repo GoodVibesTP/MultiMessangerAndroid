@@ -2,19 +2,19 @@ package com.goodvibes.multimessenger
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.BitmapFactory
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ArrayAdapter
 import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
-import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.goodvibes.multimessenger.datastructure.Chat
-import com.goodvibes.multimessenger.datastructure.Message
 import com.goodvibes.multimessenger.datastructure.Messengers
-import kotlinx.coroutines.CoroutineScope
+import com.goodvibes.multimessenger.network.tgmessenger.Telegram
+import com.squareup.picasso.Picasso
+import java.net.URL
+
 
 //class ListChatsAdapter: ArrayAdapter<Chat> {
 //    public constructor(ctx: Context, chats: List<Chat>) :
@@ -75,6 +75,15 @@ class ListChatsAdapter(
             holder.imageViewMessenger.setImageResource(R.drawable.vk)
         } else {
             holder.imageViewMessenger.setImageResource(R.mipmap.tg_icon)
+        }
+        if (chat.imgUri != null) {
+            Picasso.get().load(chat.imgUri).into(holder.imageViewChatAva)
+        } else {
+            if (chat.photoTg != null) {
+                holder.imageViewChatAva.setImageResource(R.drawable.images)
+            } else {
+                holder.imageViewChatAva.setImageResource(R.drawable.images)
+            }
         }
 
         holder.textViewTitle.text = chat.title
