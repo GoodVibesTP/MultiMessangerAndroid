@@ -17,7 +17,6 @@ class AuthorizationActivity : AppCompatActivity() {
         setContentView(R.layout.activity_authorization)
 
         useCase = AuthorizationActivityUC(VK, Telegram)
-
         initBtn()
     }
 
