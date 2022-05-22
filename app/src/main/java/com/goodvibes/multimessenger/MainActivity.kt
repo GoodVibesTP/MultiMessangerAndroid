@@ -243,7 +243,6 @@ class MainActivity : AppCompatActivity() {
                     numberLastChatVK += numberChatOnPage
                     isLoadingChatVK = false
                     listChatsAdapter.addAll(chats)
-
                     for (item in chats) {
                         dbUseCase.addChatsToPrimaryFolderIfNotExist(item)
                     }

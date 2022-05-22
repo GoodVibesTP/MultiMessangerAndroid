@@ -35,6 +35,8 @@ data class VKUserFull(
     val lastNameAbl: String? = null,
     @SerializedName("bdate")
     val bdate: String? = null,
+    @SerializedName("photo_100")
+    val photo100: String? = null,
     @SerializedName("photo_200")
     val photo200: String? = null,
 //    @SerializedName("photo_max")
