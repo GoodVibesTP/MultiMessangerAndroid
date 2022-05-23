@@ -1,7 +1,6 @@
 package com.goodvibes.multimessenger
 
 import android.annotation.SuppressLint
-import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
@@ -10,9 +9,7 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
-import androidx.annotation.RequiresApi
 import androidx.appcompat.widget.Toolbar
-import androidx.core.view.size
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.goodvibes.multimessenger.datastructure.Chat
@@ -37,6 +34,8 @@ class ChatActivity : AppCompatActivity() {
     lateinit var toolbar: Toolbar
 
     private var isLoadingNewMessages: Boolean = true
+    var listMessagesLastLoadedId: Long = 0
+    var listMessagesLastLoadedCount: Int = 1
     private var numberMessageOnPage: Int = 50
     private var numberLastMessage: Int = 50
 
@@ -85,7 +84,7 @@ class ChatActivity : AppCompatActivity() {
         toolbar.title = currentChat.title
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        toolbar.setNavigationOnClickListener{
+        toolbar.setNavigationOnClickListener {
             finish()
         }
         progressBarLoadMoreMessages = findViewById(R.id.progressbar)
@@ -110,6 +109,7 @@ class ChatActivity : AppCompatActivity() {
                     usecase.sendMessage(message) { message_id ->
                         message.id = message_id
                         GlobalScope.launch(Dispatchers.Main) {
+                            Log.d("TG_LOG_MSG_IDS", "send msg ${message.chatId} ${message.id} ${message.text}")
                             if (listMessage.lastOrNull { it.id == message_id } == null) {
                                 listMessage.add(0, message)
                                 Log.d("MM_LOG", "send message ${message.id}")
@@ -122,6 +122,7 @@ class ChatActivity : AppCompatActivity() {
                 else {
                     message.id = currentEditMessageId
                     usecase.editMessage(message) { _ ->
+                        Log.d("TG_LOG_MSG_IDS", "edit msg ${message.chatId} ${message.id} ${message.text}")
                         GlobalScope.launch(Dispatchers.Main) {
                             val position = listMessage.indexOfFirst { it.id == message.id }
                             if (position >= 0) {
@@ -154,9 +155,11 @@ class ChatActivity : AppCompatActivity() {
         usecase.getMessageFromChat(currentChat, 50) { messages ->
             GlobalScope.launch(Dispatchers.Main) {
                 for (message in messages) {
-                    Log.d("MM_LOG", "initListMessage: ${message.text}")
+                    Log.d("TG_LOG_MSG_IDS", "get msg ${message.chatId} ${message.id} ${message.text}")
                 }
                 listMessage.addAll(messages)
+                listMessagesLastLoadedId = listMessage.last().id
+                listMessagesLastLoadedCount = messages.size
                 listMessageAdapter.notifyDataSetChanged()
                 isLoadingNewMessages = false
 
@@ -168,6 +171,7 @@ class ChatActivity : AppCompatActivity() {
                 is Event.DeleteMessage -> {
                     if (event.chat_id == currentChat.chatId) {
                         GlobalScope.launch(Dispatchers.Main) {
+                            Log.d("TG_LOG_MSG_IDS", "get event delete msg ${event.chat_id} ${event.message_id}")
                             listMessage.removeAll { it.id == event.message_id }
                             listMessageAdapter.notifyDataSetChanged()
                         }
@@ -176,6 +180,7 @@ class ChatActivity : AppCompatActivity() {
                 is Event.NewMessage -> {
                     if (event.message.chatId == currentChat.chatId) {
                         GlobalScope.launch(Dispatchers.Main) {
+                            Log.d("TG_LOG_MSG_IDS", "get event new msg ${event.message.chatId} ${event.message.id} ${event.message.text}")
                             if (listMessage.lastOrNull { it.id == event.message.id } == null) {
                                 Log.d("MM_LOG", "get message ${event.message.id}")
                                 listMessage.add(0, event.message)
@@ -187,6 +192,7 @@ class ChatActivity : AppCompatActivity() {
                 is Event.EditMessage -> {
                     if (currentChat.chatId == event.message.chatId) {
                         GlobalScope.launch(Dispatchers.Main) {
+                            Log.d("TG_LOG_MSG_IDS", "get event edit msg ${event.message.chatId} ${event.message.id} ${event.message.text}")
                             val position = listMessage.indexOfFirst { it.id == event.message.id }
                             if (position >= 0) {
                                 listMessage[position] = event.message
@@ -198,6 +204,7 @@ class ChatActivity : AppCompatActivity() {
                 is Event.EditMessageContent -> {
                     if (currentChat.chatId == event.chat_id) {
                         GlobalScope.launch(Dispatchers.Main) {
+                            Log.d("TG_LOG_MSG_IDS", "get event edit msg ${event.chat_id} ${event.message_id} ${event.text}")
                             val messageToEdit = listMessage.firstOrNull { it.id == event.message_id }
                             messageToEdit?.text = event.text
                             listMessageAdapter.notifyDataSetChanged()
@@ -265,20 +272,25 @@ class ChatActivity : AppCompatActivity() {
             val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
             if (!isLoadingNewMessages && firstVisibleItemPosition >= 0) {
                 if (visibleItemCount + firstVisibleItemPosition >= totalItemCount) {
-                    progressBarLoadMoreMessages.visibility = View.VISIBLE
                     isLoadingNewMessages = true
-                    usecase.getMessageFromChat(
-                        chat = currentChat,
-                        count = numberMessageOnPage,
-                        first_msg_id = listMessage.last().id
-                    ) { messages ->
-                        numberLastMessage += numberMessageOnPage
-                        isLoadingNewMessages = false
-                        GlobalScope.launch(Dispatchers.Main) {
-                            listMessage.addAll(messages)
-                            listMessageAdapter.notifyDataSetChanged()
+                    val listMessageLastId = listMessage.last().id
+                    if (listMessagesLastLoadedId != listMessageLastId || listMessagesLastLoadedCount > 0) {
+                        progressBarLoadMoreMessages.visibility = View.VISIBLE
+                        usecase.getMessageFromChat(
+                            chat = currentChat,
+                            count = numberMessageOnPage,
+                            first_msg_id = listMessageLastId
+                        ) { messages ->
+                            numberLastMessage += numberMessageOnPage
+                            GlobalScope.launch(Dispatchers.Main) {
+                                listMessage.addAll(messages)
+                                listMessagesLastLoadedId = listMessage.last().id
+                                listMessagesLastLoadedCount = messages.size
+                                isLoadingNewMessages = false
+                                listMessageAdapter.notifyDataSetChanged()
+                            }
+                            progressBarLoadMoreMessages.visibility = View.GONE
                         }
-                        progressBarLoadMoreMessages.visibility = View.GONE
                     }
                 }
             }
@@ -344,7 +356,7 @@ class ChatActivity : AppCompatActivity() {
         override fun onActionItemClicked(mode: ActionMode?, item: MenuItem?): Boolean {
             when (item?.itemId) {
                 R.id.select_message_menu_edit -> {
-                    val messageToEdit = listMessage.findLast { it.id == checkedItems.first() }
+                    val messageToEdit = listMessage.firstOrNull { it.id == checkedItems.first() }
                     checkedItems.clear()
                     lastCheckedItemCount = 0
                     actionMode?.finish()
@@ -358,6 +370,7 @@ class ChatActivity : AppCompatActivity() {
 
                 }
                 R.id.select_message_menu_delete -> {
+                    Log.d("TG_LOG_MSG_IDS", "delete msg ${currentChat.chatId} ${checkedItems.toSortedSet().joinToString(separator = " ")}")
                     usecase.deleteMessages(currentChat, checkedItems.toList())
                     listMessage.removeAll { checkedItems.contains(it.id) }
                     checkedItems.clear()

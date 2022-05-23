@@ -15,7 +15,6 @@ import com.goodvibes.multimessenger.network.tgmessenger.Telegram
 import com.squareup.picasso.Picasso
 import java.net.URL
 
-
 //class ListChatsAdapter: ArrayAdapter<Chat> {
 //    public constructor(ctx: Context, chats: List<Chat>) :
 //            super(ctx, R.layout.list_item_chats, chats){}

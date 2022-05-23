@@ -42,6 +42,7 @@ class ListSingleChatAdapter(
             holder.unreadMarkerIngoing.visibility = View.GONE
         } else {
             holder.layoutMessageIngoing.visibility = View.VISIBLE
+            holder.textViewSenderIngoing.text = "Hardcoded name"
             holder.textViewTextMessageIngoing.text = message.text
             holder.textViewTimeIngoing.text = message.time
             holder.unreadMarkerIngoing.visibility = if (message.read) View.GONE else View.VISIBLE
@@ -69,6 +70,7 @@ class ListSingleChatAdapter(
         var itemChecked: Boolean = false
 
         internal val layoutMessageIngoing: ConstraintLayout
+        internal val textViewSenderIngoing: TextView
         internal val textViewTextMessageIngoing: TextView
         internal val textViewTimeIngoing: TextView
         internal val unreadMarkerIngoing: ImageView
@@ -83,6 +85,7 @@ class ListSingleChatAdapter(
             textViewTextMessageIngoing = view.findViewById(R.id.chat_other_user_message)
             textViewTimeIngoing = view.findViewById(R.id.chat_other_user_message_time)
             unreadMarkerIngoing = view.findViewById(R.id.chat_other_user_message_unread_marker)
+            textViewSenderIngoing = view.findViewById(R.id.chat_other_user_message_sender)
 
             layoutMessageOutgoing = view.findViewById(R.id.chat_my_layout)
             textViewTextMessageOutgoing = view.findViewById(R.id.chat_my_message)

@@ -45,7 +45,7 @@ object VK : Messenger {
 
     private val vkClient = OriginalVKClient
 
-    private var token = "eb853229e58c68c4fdd11ae53cb992c0e340faa5e62ab30229bfc161bb33413f8f3de1d982d832abdcee8"
+    private var token = "your_token"
 
     private val permissions = arrayListOf<VKScope>()
 
