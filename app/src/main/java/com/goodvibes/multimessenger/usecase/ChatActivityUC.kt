@@ -1,6 +1,5 @@
 package com.goodvibes.multimessenger.usecase
 
-import android.widget.Toast
 import com.goodvibes.multimessenger.ChatActivity
 import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.Event

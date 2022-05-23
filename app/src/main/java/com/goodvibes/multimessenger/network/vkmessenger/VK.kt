@@ -7,13 +7,11 @@ import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.Event
 import com.goodvibes.multimessenger.datastructure.Message
 import com.goodvibes.multimessenger.datastructure.Messengers
+import com.goodvibes.multimessenger.datastructure.User
 import com.goodvibes.multimessenger.network.Messenger
 import com.goodvibes.multimessenger.network.vkmessenger.dto.*
-import com.google.gson.JsonElement
-import com.google.gson.JsonObject
 import com.vk.api.sdk.VK as OriginalVKClient
 import com.vk.api.sdk.VKTokenExpiredHandler
-import com.vk.api.sdk.auth.VKAuthenticationResult
 import com.vk.api.sdk.auth.VKScope
 import retrofit2.Call
 import retrofit2.Callback
@@ -22,7 +20,6 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.math.roundToInt
 
 
 object VK : Messenger {
@@ -592,6 +589,18 @@ object VK : Messenger {
         })
 
         Log.d(LOG_TAG, "$methodName request: ${callForVKRespond.request()}")
+    }
+
+    fun getCurrentUser(callback: (User) -> Unit) {
+        getUserInfo(null, "photo_200") {
+            val currentUser = User(
+                userId = it[0].id,
+                firstName = it[0].firstName ?: "",
+                lastName = it[0].lastName ?: "",
+                imgUri = it[0].photoMaxOrig ?: it[0].photo200 ?: it[0].photo100 ?: ""
+            )
+            callback(currentUser)
+        }
     }
 
     private fun getUserInfo(
