@@ -103,7 +103,8 @@ class ChatActivity : AppCompatActivity() {
                     ),
                     isMyMessage = true,
                     read = false,
-                    messenger = currentChat.messenger
+                    messenger = currentChat.messenger,
+                    attachments = null
                 )
                 if (!modeEditMessage) {
                     usecase.sendMessage(message) { message_id ->
@@ -296,8 +297,10 @@ class ChatActivity : AppCompatActivity() {
             }
 
             val firstCompletelyVisibleItem = layoutManager.findFirstCompletelyVisibleItemPosition()
-            if (listMessage[firstCompletelyVisibleItem].id > currentChat.inRead) {
-                markAsReadUntil(listMessage[firstCompletelyVisibleItem].id)
+            if (firstCompletelyVisibleItem > 0) {
+                if (listMessage[firstCompletelyVisibleItem].id > currentChat.inRead) {
+                    markAsReadUntil(listMessage[firstCompletelyVisibleItem].id)
+                }
             }
         }
     }

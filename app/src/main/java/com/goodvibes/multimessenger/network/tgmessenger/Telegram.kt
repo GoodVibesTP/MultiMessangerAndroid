@@ -128,6 +128,7 @@ object Telegram : Messenger {
             fwdMessages = null,
             replyTo = null,
             messenger = Messengers.TELEGRAM,
+            attachments = null
         )
     }
 

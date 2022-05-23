@@ -29,6 +29,14 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 />
+        <LinearLayout
+                android:id="@+id/chat_my_message_layout_attachments"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/chat_my_message"
+                android:orientation="vertical">
+
+        </LinearLayout>
         <TextView
                 android:id="@+id/chat_my_message_time"
                 android:layout_width="match_parent"
@@ -36,7 +44,7 @@
                 tools:text="21:00"
                 android:gravity="end"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/chat_my_message"
+                app:layout_constraintTop_toBottomOf="@id/chat_my_message_layout_attachments"
                 />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -85,6 +93,14 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/chat_other_user_message_sender"
                 />
+        <LinearLayout
+                android:id="@+id/chat_other_user_message_layout_attachments"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:layout_constraintTop_toBottomOf="@id/chat_other_user_message"
+                android:orientation="vertical">
+
+        </LinearLayout>
         <TextView
                 android:id="@+id/chat_other_user_message_time"
                 android:layout_width="match_parent"
@@ -93,7 +109,7 @@
                 android:gravity="start"
                 app:layout_constraintStart_toStartOf="parent"
                 android:padding="@dimen/cardview_default_elevation"
-                app:layout_constraintTop_toBottomOf="@id/chat_other_user_message"
+                app:layout_constraintTop_toBottomOf="@id/chat_other_user_message_layout_attachments"
                 />
     </androidx.constraintlayout.widget.ConstraintLayout>
 

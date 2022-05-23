@@ -737,7 +737,8 @@ object VK : Messenger {
                                             time = dateFormat.format(datetime * 1000L),
                                             fwdMessages = null,
                                             replyTo = null,
-                                            messenger = Messengers.VK
+                                            messenger = Messengers.VK,
+                                            attachments = null
                                         ),
                                         direction = if (updateItem[VK_UPDATE.NEW_MESSAGE.FLAGS].asInt and 2 == 0) {
                                             Event.NewMessage.Direction.INGOING
@@ -771,7 +772,8 @@ object VK : Messenger {
                                             time = dateFormat.format(datetime * 1000L),
                                             fwdMessages = null,
                                             replyTo = null,
-                                            messenger = Messengers.VK
+                                            messenger = Messengers.VK,
+                                            attachments = null
                                         )
                                     )
                                 }

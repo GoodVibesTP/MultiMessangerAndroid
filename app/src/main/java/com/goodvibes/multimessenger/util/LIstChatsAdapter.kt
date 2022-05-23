@@ -122,7 +122,7 @@ class ListChatsAdapter(
 
             view.setOnClickListener { View ->
                 val intent = Intent(mainActivity, ChatActivity::class.java)
-                val chat = mainActivity.listChatsAdapter.chats[adapterPosition]
+                val chat = mainActivity.listChatsAdapter.chats[position]
                 intent.putExtra("Chat", chat)
                 mainActivity.startActivity(intent)
             }

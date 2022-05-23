@@ -168,6 +168,7 @@ fun toDefaultMessage(
         isMyMessage = currentUserId == message.fromId,
         fwdMessages = fwdMessages,
         replyTo = toDefaultMessage(message.replyMessage, currentUserId),
-        messenger = Messengers.VK
+        messenger = Messengers.VK,
+        attachments = null
     )
 }
