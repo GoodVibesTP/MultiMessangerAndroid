@@ -7,6 +7,8 @@ import android.util.Log
 import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
@@ -30,9 +32,12 @@ import com.goodvibes.multimessenger.network.vkmessenger.VK
 import com.goodvibes.multimessenger.usecase.MainActivityUC
 import com.goodvibes.multimessenger.util.ListFoldersAdapter
 import com.google.android.material.navigation.NavigationView
+import com.squareup.picasso.Picasso
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import java.util.*
+import kotlin.Comparator
 
 
 class MainActivity : AppCompatActivity() {
@@ -57,7 +62,7 @@ class MainActivity : AppCompatActivity() {
     var mActionMode: ActionMode? = null
     lateinit var callback: ListChatsActionModeCallback
 
-    var allChats: MutableList<Chat> = mutableListOf()
+    var allChats = Collections.synchronizedList(mutableListOf<Chat>())
 
     private var swipeContainer: SwipeRefreshLayout? = null
 
@@ -80,6 +85,14 @@ class MainActivity : AppCompatActivity() {
         initSwipeRefresh()
         initMenu()
         initChatsAllAdapter()
+
+        useCase.getCurrentUserVK { user ->
+            var viewName = findViewById<TextView>(R.id.drawer_header_username)
+            viewName.text = user.firstName + " " + user.lastName
+
+            var userAva = findViewById<ImageView>(R.id.drawer_header_ava)
+            Picasso.get().load(user.imgUri).into(userAva)
+        }
 
         callback = ListChatsActionModeCallback()
     }
@@ -118,7 +131,6 @@ class MainActivity : AppCompatActivity() {
                     val intent = Intent(this, AuthorizationActivity::class.java)
                     startActivity(intent)
                 }
-                R.id.nav_chto_to -> Toast.makeText(applicationContext, "Clicked chtoto", Toast.LENGTH_LONG).show()
             }
             true
         }
@@ -135,7 +147,6 @@ class MainActivity : AppCompatActivity() {
 
     @RequiresApi(Build.VERSION_CODES.M)
     private fun initChatsAllAdapter() {
-    allChats = mutableListOf()
     listChatsAdapter = ListChatsAdapter(this@MainActivity, allChats, this@MainActivity);
     activityMainBinding.listChats.setAdapter(listChatsAdapter);
     useCase.startUpdateListener { event ->
@@ -143,12 +154,13 @@ class MainActivity : AppCompatActivity() {
             is Event.NewMessage -> {
                 useCase.getChatByID(event.message.messenger, event.message.chatId){
                     chat: Chat ->
-                    if (allChats.contains(chat)) {
-                        allChats.remove(chat)
-                        allChats.add(0, chat)
-                    } else {
-                        allChats.add(0, chat)
+                    for (i in allChats.indices) {
+                        if (chat.chatId == allChats[i].chatId) {
+                            allChats.removeAt(i)
+                            break
+                        }
                     }
+                    allChats.add(0, chat)
                     listChatsAdapter.notifyDataSetChanged()
                 }
                 Log.d("VK_LOG", "new incoming message: ${event.message}")
