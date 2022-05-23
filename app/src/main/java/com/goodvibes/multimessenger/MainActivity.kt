@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.service.autofill.Validators.not
 import android.util.Log
 import android.view.ActionMode
 import android.view.Menu
@@ -49,6 +50,7 @@ class MainActivity : AppCompatActivity() {
     lateinit var toggle : ActionBarDrawerToggle
     lateinit var toolbar: Toolbar
     lateinit var spinner: Spinner
+    lateinit var spinnerAdapter: ArrayAdapter<String>
     lateinit var folders: ArrayList<String>
     val myDbManager = MyDBManager(this)
     lateinit var useCase: MainActivityUC
@@ -72,6 +74,8 @@ class MainActivity : AppCompatActivity() {
     var allChats = Collections.synchronizedList(mutableListOf<Chat>())
 
     private var swipeContainer: SwipeRefreshLayout? = null
+
+    var startChats: MutableList<Chat> = mutableListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
@@ -102,25 +106,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         val names = arrayListOf("Sasha", "Masha", "Lena", "Alla", "Lelya")
-        val spinnerAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, names)
+        var spinnerAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, names)
+
         spinner = findViewById(R.id.sp_option)
-        spinner.adapter = spinnerAdapter
+        folders = myDbManager.getFolders()
+        spinnerAdapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, folders)
 
-        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
-                folders = myDbManager.getFolders()
-                spinnerAdapter.clear()
-                spinnerAdapter.addAll(folders)
-                spinnerAdapter.notifyDataSetChanged()
-            }
-
-            override fun onNothingSelected(p0: AdapterView<*>?) {
-                TODO("Not yet implemented")
-            }
-        }
-
-
->>>>>>> 27e166b (Add updating folders from db. testing for primary folders)
         callback = ListChatsActionModeCallback()
     }
 
@@ -129,6 +120,7 @@ class MainActivity : AppCompatActivity() {
         allChats.clear()
         numberLastChat = 0
         getStartChats()
+        Log.d("FOLDERS", "FUCK")
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -197,12 +189,28 @@ class MainActivity : AppCompatActivity() {
     }
     }
 
+    @SuppressLint("NotifyDataSetChanged")
     private fun getStartChats() {
         swipeContainer?.setRefreshing(true);
+
+        Log.d("RESUME", "PS")
+
         useCase.getAllChats(numberChatOnPage, 0) { chats ->
             GlobalScope.launch(Dispatchers.Main) {
                 numberLastChat = numberChatOnPage
                 allChats.addAll(chats)
+
+                val tempStartChats : MutableList<Chat> = mutableListOf()
+
+                for (currentChat in chats) {
+                    val found = startChats.find{ it == currentChat}
+                    if (found == null) {
+                        tempStartChats.add(currentChat)
+                    }
+                }
+
+                startChats.addAll(tempStartChats)
+
                 allChats.sortWith(ComparatorChats().reversed())
                 listChatsAdapter.notifyDataSetChanged()
 
@@ -211,7 +219,55 @@ class MainActivity : AppCompatActivity() {
                 for (item in chats) {
                     dbUseCase.addChatsToPrimaryFolderIfNotExist(item)
                 }
+
                 swipeContainer?.setRefreshing(false);
+
+                spinner.adapter = spinnerAdapter
+                folders = myDbManager.getFolders()
+                folders.forEachIndexed { index, element ->
+                    if (element == currentFolder.name) {
+                        spinner.setSelection(index)
+                    }
+                }
+
+                spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                    override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
+
+                        spinnerAdapter.clear()
+                        spinnerAdapter.addAll(folders)
+                        spinnerAdapter.notifyDataSetChanged()
+                        Log.d("FOLDERS", "OK1")
+
+                        val folderUID = myDbManager.getFolderUIDByName(folders.get(p2))
+                        Log.d("FOLDERS", "$folderUID") // папка вкшная
+
+                        val chatsDB = myDbManager.getChatsByFolder(folderUID)
+
+
+                        val tempChats : MutableList<Chat> = mutableListOf()
+
+                        for (item in chatsDB) {
+                            for (chat in startChats) {
+                                if (chat.chatId == item) {
+                                    tempChats.add(chat)
+                                }
+                            }
+                        }
+
+                        Log.d("FOLDERS", "${tempChats.size}")
+                        Log.d("FOLDERS", "----------------------------------------------------------------")
+
+                        allChats.clear()
+                        allChats.addAll(tempChats)
+                        allChats.sortWith(ComparatorChats().reversed())
+                        listChatsAdapter.notifyDataSetChanged()
+                        currentFolder.name = folders.get(p2)
+                    }
+
+                    override fun onNothingSelected(p0: AdapterView<*>?) {
+                        TODO("Not yet implemented")
+                    }
+                }
             }
         }
     }
@@ -289,7 +345,7 @@ class MainActivity : AppCompatActivity() {
            val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
 
             folders = myDbManager.getFolders()
-            val spinnerAdapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, folders)
+            spinnerAdapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, folders)
 
             spinner.adapter = spinnerAdapter
 
@@ -310,7 +366,7 @@ class MainActivity : AppCompatActivity() {
 
            if (!isLoadingChatVK &&  (firstVisibleItemPosition + visibleItemCount >= totalItemCount)) {
                isLoadingChatVK = true
-               useCase.getAllChats(numberChatOnPage, numberLastChat) {chats ->
+               useCase.getAllChats(numberChatOnPage, numberLastChat) { chats ->
                    numberLastChat += numberChatOnPage
                    isLoadingChatVK = false
                    allChats.addAll(chats)
@@ -319,9 +375,22 @@ class MainActivity : AppCompatActivity() {
                    for (item in chats) {
                        dbUseCase.addChatsToPrimaryFolderIfNotExist(item)
                    }
+
+                   val chatsDB = myDbManager.getChatsByFolder(currentFolder.folderId)
+
+                   val tempChats : MutableList<Chat> = mutableListOf()
+
+                   for (item in chatsDB) {
+                       for (chat in chats) {
+                           if (chat.chatId == item) {
+                               tempChats.add(chat)
+                           }
+                       }
+                   }
+
+                   allChats.addAll(tempChats)
                }
            }
-
 
        }
    }

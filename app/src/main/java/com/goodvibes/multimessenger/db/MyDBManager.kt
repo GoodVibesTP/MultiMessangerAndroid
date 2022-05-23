@@ -122,6 +122,53 @@ class MyDBManager(context: Context) {
         return data
     }
 
+    @SuppressLint("Range")
+    fun getFolderUIDByName(title: String): Int {
+        var folderUID = 0
+        val cursor = db?.query(
+            MyDbNameClass.FOLDERS_TABLE_NAME,   // The table to query
+            null,             // The array of columns to return (pass null to get all)
+            "${MyDbNameClass.FOLDERS_TITLE_COLUMN_NAME} = ?",              // The columns for the WHERE clause
+            arrayOf(title),          // The values for the WHERE clause
+            null,                   // don't group the rows
+            null,                   // don't filter by row groups
+            null               // The sort order
+        )
+
+        while(cursor?.moveToNext()!!) {
+            folderUID = cursor.getInt(
+                cursor.getColumnIndex(MyDbNameClass.FOLDERS_UID_COLUMN_NAME))
+        }
+
+        cursor.close()
+
+        return folderUID
+    }
+
+    @SuppressLint("Range")
+    fun getChatsByFolder(uid: Int): MutableList<Long> {
+        val chatUIDs = mutableListOf<Long>()
+        val cursor = db?.query(
+            MyDbNameClass.FOLDERS_SHARING_TABLE_NAME,   // The table to query
+            null,             // The array of columns to return (pass null to get all)
+            "${MyDbNameClass.FOLDERS_SHARING_FOLDER_ID_COLUMN_NAME} = ?",              // The columns for the WHERE clause
+            arrayOf(uid.toString()),          // The values for the WHERE clause
+            null,                   // don't group the rows
+            null,                   // don't filter by row groups
+            null               // The sort order
+        )
+
+        while(cursor?.moveToNext()!!) {
+            val chatUID = cursor.getLong(
+                cursor.getColumnIndex(MyDbNameClass.FOLDERS_SHARING_CHAT_ID_COLUMN_NAME))
+            chatUIDs.add(chatUID)
+        }
+
+        cursor.close()
+
+        return chatUIDs
+    }
+
     fun closeDB() {
         myDBHelper.close()
     }
