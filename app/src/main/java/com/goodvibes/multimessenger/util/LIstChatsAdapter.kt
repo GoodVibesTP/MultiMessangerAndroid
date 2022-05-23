@@ -69,25 +69,27 @@ class ListChatsAdapter(
         holder: ListChatsAdapter.ViewHolder,
         position: Int
     ) {
-        val chat = chats[position]
-        if (chat.messenger == Messengers.VK) {
-            holder.imageViewMessenger.setImageResource(R.drawable.vk)
-        } else {
-            holder.imageViewMessenger.setImageResource(R.mipmap.tg_icon)
-        }
-        if (chat.imgUri != null) {
-            Picasso.get().load(chat.imgUri).into(holder.imageViewChatAva)
-        } else {
+        if (position != -1) {
+            val chat = chats[position]
+            if (chat.messenger == Messengers.VK) {
+                holder.imageViewMessenger.setImageResource(R.drawable.vk)
+            } else {
+                holder.imageViewMessenger.setImageResource(R.mipmap.tg_icon)
+            }
+            if (chat.imgUri != null) {
+                Picasso.get().load(chat.imgUri).into(holder.imageViewChatAva)
+            } else {
 
                 holder.imageViewChatAva.setImageResource(R.drawable.images)
 
+            }
+
+            holder.textViewTitle.text = chat.title
+            holder.textViewLastMessage.text = chat.lastMessage?.text
+            holder.textViewCountUnreadMessage.text = chat.unreadMessage.toString()
+
+            holder.bindListeners(position)
         }
-
-        holder.textViewTitle.text = chat.title
-        holder.textViewLastMessage.text = chat.lastMessage?.text
-        holder.textViewCountUnreadMessage.text = chat.unreadMessage.toString()
-
-        holder.bindListeners(position)
     }
 
     override fun getItemCount(): Int {

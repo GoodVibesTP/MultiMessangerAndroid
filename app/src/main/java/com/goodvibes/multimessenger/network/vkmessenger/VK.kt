@@ -3,15 +3,20 @@ package com.goodvibes.multimessenger.network.vkmessenger
 import android.annotation.SuppressLint
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
+<<<<<<< HEAD
 import com.goodvibes.multimessenger.R
 import com.goodvibes.multimessenger.datastructure.*
+=======
+import com.goodvibes.multimessenger.datastructure.Chat
+import com.goodvibes.multimessenger.datastructure.Event
+import com.goodvibes.multimessenger.datastructure.Message
+import com.goodvibes.multimessenger.datastructure.Messengers
+import com.goodvibes.multimessenger.datastructure.User
+>>>>>>> mvp2
 import com.goodvibes.multimessenger.network.Messenger
 import com.goodvibes.multimessenger.network.vkmessenger.dto.*
-import com.google.gson.JsonElement
-import com.google.gson.JsonObject
 import com.vk.api.sdk.VK as OriginalVKClient
 import com.vk.api.sdk.VKTokenExpiredHandler
-import com.vk.api.sdk.auth.VKAuthenticationResult
 import com.vk.api.sdk.auth.VKScope
 import retrofit2.Call
 import retrofit2.Callback
@@ -20,14 +25,13 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
 import java.util.*
-import kotlin.math.roundToInt
 
 
 object VK : Messenger {
     override val messenger = Messengers.VK
 
     @SuppressLint("SimpleDateFormat")
-    val dateFormat = SimpleDateFormat("dd/M/yyyy HH:mm:ss", Locale("ru", "ru"))
+    val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale("ru", "ru"))
 
     private lateinit var activity: AppCompatActivity
 
@@ -43,7 +47,7 @@ object VK : Messenger {
 
     private val vkClient = OriginalVKClient
 
-    private var token = "ae034c6495166b0c6bcba7af00477b53c3d67755024b2302cad06a5a9022bb1625f97ab221e8b535c391b"
+    private var token = "token"
 
     private val permissions = arrayListOf<VKScope>()
 
@@ -783,6 +787,18 @@ object VK : Messenger {
         })
 
         Log.d(LOG_TAG, "$methodName request: ${callForVKRespond.request()}")
+    }
+
+    fun getCurrentUser(callback: (User) -> Unit) {
+        getUserInfo(null, "photo_200") {
+            val currentUser = User(
+                userId = it[0].id,
+                firstName = it[0].firstName ?: "",
+                lastName = it[0].lastName ?: "",
+                imgUri = it[0].photoMaxOrig ?: it[0].photo200 ?: it[0].photo100 ?: ""
+            )
+            callback(currentUser)
+        }
     }
 
     private fun getUserInfo(

@@ -103,4 +103,8 @@ class MainActivityUC(_mainActivity: MainActivity, _vkMessenger: VK, _tgMessenger
             }
         }
     }
+
+    fun getCurrentUserVK(callback: (User) -> Unit) {
+        vk.getCurrentUser(callback)
+    }
 }

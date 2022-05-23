@@ -65,7 +65,7 @@ object Telegram : Messenger {
     private var chatsLoaded = false
 
     @SuppressLint("SimpleDateFormat")
-    private val dateFormat = SimpleDateFormat("dd/M/yyyy HH:mm:ss", Locale("ru", "ru"))
+    private val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale("ru", "ru"))
 
     private fun toDefaultChat(chat: TdApi.Chat): Chat {
         val lastMessage = if(chat.lastMessage == null) null else {

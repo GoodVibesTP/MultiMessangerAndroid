@@ -16,10 +16,5 @@
             android:title="Authorization"
             />
 
-    <item
-            android:id="@+id/nav_chto_to"
-            android:icon="@drawable/ic_baseline_home_24"
-            android:title="home"
-            />
 
 </menu>
