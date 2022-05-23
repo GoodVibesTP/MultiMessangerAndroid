@@ -103,13 +103,13 @@ class MyDBManager(context: Context) {
         var data = 0
 
         val cursor = db?.query(
-            MyDbNameClass.FOLDERS_TABLE_NAME,   // The table to query
-            null,             // The array of columns to return (pass null to get all)
-            "${MyDbNameClass.FOLDERS_TITLE_COLUMN_NAME} = ?",              // The columns for the WHERE clause
-            arrayOf(name),          // The values for the WHERE clause
-            null,                   // don't group the rows
-            null,                   // don't filter by row groups
-            null               // The sort order
+            MyDbNameClass.FOLDERS_TABLE_NAME,
+            null,
+            "${MyDbNameClass.FOLDERS_TITLE_COLUMN_NAME} = ?",
+            arrayOf(name),
+            null,
+            null,
+            null
         )
 
         while(cursor?.moveToNext()!!) {

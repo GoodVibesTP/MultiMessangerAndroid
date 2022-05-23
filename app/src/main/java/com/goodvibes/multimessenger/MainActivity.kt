@@ -1,5 +1,6 @@
 package com.goodvibes.multimessenger
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -10,6 +11,9 @@ import android.view.MenuItem
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import android.view.View
+import android.widget.*
+import android.widget.AbsListView.OnScrollListener
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
@@ -44,10 +48,13 @@ class MainActivity : AppCompatActivity() {
     lateinit var activityMainBinding : ActivityMainBinding;
     lateinit var toggle : ActionBarDrawerToggle
     lateinit var toolbar: Toolbar
+    lateinit var spinner: Spinner
+    lateinit var folders: ArrayList<String>
     val myDbManager = MyDBManager(this)
     lateinit var useCase: MainActivityUC
     val vk = VK
     val tg = Telegram
+    var counter = 0
     lateinit var listChatsAdapter: ListChatsAdapter
 
 
@@ -94,6 +101,26 @@ class MainActivity : AppCompatActivity() {
             Picasso.get().load(user.imgUri).into(userAva)
         }
 
+        val names = arrayListOf("Sasha", "Masha", "Lena", "Alla", "Lelya")
+        val spinnerAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, names)
+        spinner = findViewById(R.id.sp_option)
+        spinner.adapter = spinnerAdapter
+
+        spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
+                folders = myDbManager.getFolders()
+                spinnerAdapter.clear()
+                spinnerAdapter.addAll(folders)
+                spinnerAdapter.notifyDataSetChanged()
+            }
+
+            override fun onNothingSelected(p0: AdapterView<*>?) {
+                TODO("Not yet implemented")
+            }
+        }
+
+
+>>>>>>> 27e166b (Add updating folders from db. testing for primary folders)
         callback = ListChatsActionModeCallback()
     }
 
@@ -237,6 +264,7 @@ class MainActivity : AppCompatActivity() {
                     dialog.show(manager, "Select folder")
                     return true
                 }
+
             }
             return false;
         }
@@ -251,6 +279,7 @@ class MainActivity : AppCompatActivity() {
            super.onScrollStateChanged(recyclerView, newState)
        }
 
+        @SuppressLint("NotifyDataSetChanged")
         @RequiresApi(Build.VERSION_CODES.N)
         override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
            super.onScrolled(recyclerView, dx, dy)
@@ -258,6 +287,27 @@ class MainActivity : AppCompatActivity() {
            val visibleItemCount = layoutManager.childCount
            val totalItemCount = layoutManager.itemCount
            val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
+
+            folders = myDbManager.getFolders()
+            val spinnerAdapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, folders)
+
+            spinner.adapter = spinnerAdapter
+
+            spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
+                    folders = myDbManager.getFolders()
+                    spinnerAdapter.clear()
+                    spinnerAdapter.addAll(folders)
+                    spinnerAdapter.notifyDataSetChanged()
+
+
+                }
+
+                override fun onNothingSelected(p0: AdapterView<*>?) {
+                    TODO("Not yet implemented")
+                }
+            }
+
            if (!isLoadingChatVK &&  (firstVisibleItemPosition + visibleItemCount >= totalItemCount)) {
                isLoadingChatVK = true
                useCase.getAllChats(numberChatOnPage, numberLastChat) {chats ->
@@ -271,6 +321,8 @@ class MainActivity : AppCompatActivity() {
                    }
                }
            }
+
+
        }
    }
 
