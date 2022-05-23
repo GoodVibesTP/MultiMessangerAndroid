@@ -15,5 +15,5 @@ data class Chat(
     var inRead: Long,
     var outRead: Long,
     var unreadMessage: Int?,
-    var tgAva: TdApi.File? = null
+    @Transient var tgAva: TdApi.File? = null
 ) : Serializable
