@@ -13,6 +13,8 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.recyclerview.widget.RecyclerView
 import com.goodvibes.multimessenger.R
 import com.goodvibes.multimessenger.datastructure.Message
+import com.goodvibes.multimessenger.datastructure.MessageAttachment
+import com.squareup.picasso.Picasso
 
 
 class ListSingleChatAdapter(
@@ -70,12 +72,19 @@ class ListSingleChatAdapter(
                 AppCompatResources.getDrawable(ctx, R.color.list_item_message_unchecked)
         }
 
-        if (position % 5 == 1) {
-            val imageView = ImageView(ctx)
-            imageView.setImageResource(R.drawable.kotik)
-            imageView.layoutParams = LayoutParams(layoutAttachments.width, layoutAttachments.width)
-
-            layoutAttachments.addView(imageView)
+        if (messages[position].attachments != null) {
+            for (attachment in messages[position].attachments!!) {
+                when(attachment) {
+                    is MessageAttachment.Image -> {
+                        val imageView = ImageView(ctx)
+                        Picasso.get().load(attachment.imgUri).into(imageView)
+                        val maxWidth = layoutAttachments.width
+                        imageView.layoutParams =
+                            LayoutParams(maxWidth, maxWidth * attachment.height / attachment.width)
+                        layoutAttachments.addView(imageView)
+                    }
+                }
+            }
         }
     }
 
