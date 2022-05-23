@@ -91,6 +91,7 @@ object Telegram : Messenger {
             outRead = chat.lastReadOutboxMessageId,
             messenger = Messengers.TELEGRAM,
             unreadMessage = chat.unreadCount,
+            tgAva = chat.photo?.small
         )
     }
 
@@ -168,12 +169,12 @@ object Telegram : Messenger {
     override fun getUserId(): Long {
         return currentUserId
     }
-    fun downloadFile(file: TdApi.File) {
+    fun downloadFile(file: TdApi.File, callback: Client.ResultHandler) {
         client.send(
             TdApi.DownloadFile(
                 file.id, 1,0,0,true
             ),
-            AuthorizationRequestHandler()
+            callback
         )
     }
     override fun getAllChats(count: Int, first_chat: Int, callback: (MutableList<Chat>) -> Unit) {
