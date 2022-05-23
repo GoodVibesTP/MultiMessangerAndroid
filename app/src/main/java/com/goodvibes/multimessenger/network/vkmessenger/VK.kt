@@ -3,16 +3,8 @@ package com.goodvibes.multimessenger.network.vkmessenger
 import android.annotation.SuppressLint
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-<<<<<<< HEAD
 import com.goodvibes.multimessenger.R
 import com.goodvibes.multimessenger.datastructure.*
-=======
-import com.goodvibes.multimessenger.datastructure.Chat
-import com.goodvibes.multimessenger.datastructure.Event
-import com.goodvibes.multimessenger.datastructure.Message
-import com.goodvibes.multimessenger.datastructure.Messengers
-import com.goodvibes.multimessenger.datastructure.User
->>>>>>> mvp2
 import com.goodvibes.multimessenger.network.Messenger
 import com.goodvibes.multimessenger.network.vkmessenger.dto.*
 import com.vk.api.sdk.VK as OriginalVKClient
@@ -47,7 +39,7 @@ object VK : Messenger {
 
     private val vkClient = OriginalVKClient
 
-    private var token = "token"
+    private var token = "89ebeb32254517e0100616908c9adc357be186dcf1ac9e9e8a2612657511997461afabe6ec7ca50e6ac46"
 
     private val permissions = arrayListOf<VKScope>()
 
