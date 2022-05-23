@@ -1,14 +1,8 @@
 package com.goodvibes.multimessenger.network.vkmessenger
 
-import android.graphics.Bitmap
 import com.goodvibes.multimessenger.R
-import com.goodvibes.multimessenger.datastructure.Chat
-import com.goodvibes.multimessenger.datastructure.ChatType
-import com.goodvibes.multimessenger.datastructure.Message
-import com.goodvibes.multimessenger.datastructure.Messengers
+import com.goodvibes.multimessenger.datastructure.*
 import com.goodvibes.multimessenger.network.vkmessenger.dto.*
-import com.squareup.picasso.NetworkPolicy
-import com.squareup.picasso.Picasso
 import java.util.*
 
 

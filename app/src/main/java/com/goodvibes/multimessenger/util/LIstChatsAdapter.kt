@@ -15,7 +15,6 @@ import com.goodvibes.multimessenger.network.tgmessenger.Telegram
 import com.squareup.picasso.Picasso
 import java.net.URL
 
-
 //class ListChatsAdapter: ArrayAdapter<Chat> {
 //    public constructor(ctx: Context, chats: List<Chat>) :
 //            super(ctx, R.layout.list_item_chats, chats){}
@@ -70,25 +69,27 @@ class ListChatsAdapter(
         holder: ListChatsAdapter.ViewHolder,
         position: Int
     ) {
-        val chat = chats[position]
-        if (chat.messenger == Messengers.VK) {
-            holder.imageViewMessenger.setImageResource(R.drawable.vk)
-        } else {
-            holder.imageViewMessenger.setImageResource(R.mipmap.tg_icon)
-        }
-        if (chat.imgUri != null) {
-            Picasso.get().load(chat.imgUri).into(holder.imageViewChatAva)
-        } else {
+        if (position != -1) {
+            val chat = chats[position]
+            if (chat.messenger == Messengers.VK) {
+                holder.imageViewMessenger.setImageResource(R.drawable.vk)
+            } else {
+                holder.imageViewMessenger.setImageResource(R.mipmap.tg_icon)
+            }
+            if (chat.imgUri != null) {
+                Picasso.get().load(chat.imgUri).into(holder.imageViewChatAva)
+            } else {
 
                 holder.imageViewChatAva.setImageResource(R.drawable.images)
 
+            }
+
+            holder.textViewTitle.text = chat.title
+            holder.textViewLastMessage.text = chat.lastMessage?.text
+            holder.textViewCountUnreadMessage.text = chat.unreadMessage.toString()
+
+            holder.bindListeners(position)
         }
-
-        holder.textViewTitle.text = chat.title
-        holder.textViewLastMessage.text = chat.lastMessage?.text
-        holder.textViewCountUnreadMessage.text = chat.unreadMessage.toString()
-
-        holder.bindListeners(position)
     }
 
     override fun getItemCount(): Int {
@@ -123,7 +124,7 @@ class ListChatsAdapter(
 
             view.setOnClickListener { View ->
                 val intent = Intent(mainActivity, ChatActivity::class.java)
-                val chat = mainActivity.listChatsAdapter.chats[adapterPosition]
+                val chat = mainActivity.listChatsAdapter.chats[position]
                 intent.putExtra("Chat", chat)
                 mainActivity.startActivity(intent)
             }

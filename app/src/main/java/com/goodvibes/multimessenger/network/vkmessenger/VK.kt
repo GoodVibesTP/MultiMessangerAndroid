@@ -29,7 +29,7 @@ object VK : Messenger {
     override val messenger = Messengers.VK
 
     @SuppressLint("SimpleDateFormat")
-    val dateFormat = SimpleDateFormat("dd/M/yyyy HH:mm:ss", Locale("ru", "ru"))
+    val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale("ru", "ru"))
 
     private lateinit var activity: AppCompatActivity
 
@@ -54,20 +54,6 @@ object VK : Messenger {
             // token expired
         }
     }
-
-//    private val authLauncher = vkClient.login(activity) { result : VKAuthenticationResult ->
-//        when (result) {
-//            is VKAuthenticationResult.Success -> {
-//                // User passed authorization
-//                Log.d(LOG_TAG,"User passed authorization, token=${result.token.accessToken}")
-//            }
-//            is VKAuthenticationResult.Failed -> {
-//                // User didn't pass authorization
-//                Log.d(LOG_TAG,
-//                    "User didn't pass authorization, exception = ${result.exception}")
-//            }
-//        }
-//    }
 
     private const val LOG_TAG = "MultiMessenger_VK_logs"
     private val retrofit: Retrofit = Retrofit.Builder()
@@ -159,7 +145,7 @@ object VK : Messenger {
     override fun getMessagesFromChat(
         chat_id: Long,
         count: Int,
-        first_msg: Int,
+        offset: Int,
         first_msg_id: Long,
         callback: (MutableList<Message>) -> Unit
     ) {
@@ -168,7 +154,8 @@ object VK : Messenger {
             access_token = this.token,
             peer_id = chat_id,
             count = count,
-            offset = first_msg
+            offset = offset,
+            start_message_id = first_msg_id
         )
 
         callForVKRespond.enqueue(object : Callback<VKRespond<VKMessagesGetHistoryResponse>> {
@@ -297,14 +284,14 @@ object VK : Messenger {
     }
 
     override fun sendMessage(
-        user_id: Long,
+        chat_id: Long,
         text: String,
         callback: (Long) -> Unit
     ) {
         val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
         val callForVKRespond: Call<VKRespond<Long>> = messagesService.send(
             access_token = this.token,
-            peer_id = user_id,
+            peer_id = chat_id,
             message = text
         )
 
@@ -345,6 +332,124 @@ object VK : Messenger {
 
             override fun onFailure(
                 call: Call<VKRespond<Long>>,
+                t: Throwable
+            ) {
+                Log.d(LOG_TAG, "$methodName failure: $t")
+            }
+        })
+
+        Log.d(LOG_TAG, "$methodName request: ${callForVKRespond.request()}")
+    }
+
+    override fun editMessage(
+        chat_id: Long,
+        message_id: Long,
+        text: String,
+        callback: (Long) -> Unit
+    ) {
+        val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
+        val callForVKRespond: Call<VKRespond<Long>> = messagesService.edit(
+            access_token = this.token,
+            peer_id = chat_id,
+            message_id = message_id,
+            message = text
+        )
+
+        callForVKRespond.enqueue(object : Callback<VKRespond<Long>> {
+            override fun onResponse(
+                call: Call<VKRespond<Long>>,
+                response: Response<VKRespond<Long>>
+            ) {
+                Log.d(LOG_TAG, "$methodName response code: ${response.code()}")
+                if (response.isSuccessful) {
+                    val responseBody = response.body()
+                    when {
+                        responseBody == null -> {
+                            Log.d(LOG_TAG, "$methodName successful, but response.body() is null")
+                        }
+                        responseBody.response != null -> {
+                            Log.d(
+                                LOG_TAG,
+                                "$methodName successful"
+                            )
+                            callback(responseBody.response)
+                        }
+                        responseBody.error != null -> {
+                            Log.d(
+                                LOG_TAG,
+                                "$methodName error ${responseBody.error.errorCode}: ${responseBody.error.errorMsg}"
+                            )
+                        }
+                        else -> {
+                            Log.d(
+                                LOG_TAG,
+                                "$methodName response is null && error is null"
+                            )
+                        }
+                    }
+                }
+            }
+
+            override fun onFailure(
+                call: Call<VKRespond<Long>>,
+                t: Throwable
+            ) {
+                Log.d(LOG_TAG, "$methodName failure: $t")
+            }
+        })
+
+        Log.d(LOG_TAG, "$methodName request: ${callForVKRespond.request()}")
+    }
+
+    override fun deleteMessages(
+        chat_id: Long,
+        message_ids: List<Long>,
+        callback: (List<Int>) -> Unit
+    ) {
+        val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
+        val callForVKRespond: Call<VKRespond<Any>> = messagesService.delete(
+            access_token = this.token,
+            peer_id = chat_id,
+            message_ids = message_ids.joinToString(separator = ",")
+        )
+
+        callForVKRespond.enqueue(object : Callback<VKRespond<Any>> {
+            override fun onResponse(
+                call: Call<VKRespond<Any>>,
+                response: Response<VKRespond<Any>>
+            ) {
+                Log.d(LOG_TAG, "$methodName response code: ${response.code()}")
+                if (response.isSuccessful) {
+                    val responseBody = response.body()
+                    when {
+                        responseBody == null -> {
+                            Log.d(LOG_TAG, "$methodName successful, but response.body() is null")
+                        }
+                        responseBody.response != null -> {
+                            Log.d(
+                                LOG_TAG,
+                                "$methodName successful"
+                            )
+                            callback(listOf())
+                        }
+                        responseBody.error != null -> {
+                            Log.d(
+                                LOG_TAG,
+                                "$methodName error ${responseBody.error.errorCode}: ${responseBody.error.errorMsg}"
+                            )
+                        }
+                        else -> {
+                            Log.d(
+                                LOG_TAG,
+                                "$methodName response is null && error is null"
+                            )
+                        }
+                    }
+                }
+            }
+
+            override fun onFailure(
+                call: Call<VKRespond<Any>>,
                 t: Throwable
             ) {
                 Log.d(LOG_TAG, "$methodName failure: $t")
@@ -596,6 +701,18 @@ object VK : Messenger {
                         )
                         for (updateItem in responseBody.updates) {
                             val event: Event? = when(updateItem[0].asInt) {
+                                VK_UPDATE.EVENTS.MESSAGE_FLAGS_STATED -> {
+                                    if (updateItem[VK_UPDATE.MESSAGE_FLAGS_STATED.FLAGS].asInt and 128 != 0) {
+                                        Event.DeleteMessage(
+                                            updateItem[VK_UPDATE.MESSAGE_FLAGS_STATED.MINOR_ID].asLong,
+                                            updateItem[VK_UPDATE.MESSAGE_FLAGS_STATED.MESSAGE_ID].asLong,
+                                            Messengers.VK
+                                        )
+                                    }
+                                    else {
+                                        Event.DefaultEvent()
+                                    }
+                                }
                                 VK_UPDATE.EVENTS.NEW_MESSAGE -> {
                                     if (updateItem.size > VK_UPDATE.NEW_MESSAGE.ADDITIONAL_FIELD) {
                                         val ADDITIONAL_FIELD = VK_UPDATE.NEW_MESSAGE.ADDITIONAL_FIELD
@@ -628,6 +745,34 @@ object VK : Messenger {
                                         else {
                                             Event.NewMessage.Direction.OUTGOING
                                         }
+                                    )
+                                }
+                                VK_UPDATE.EVENTS.MESSAGE_EDITED -> {
+                                    if (updateItem.size > VK_UPDATE.NEW_MESSAGE.ADDITIONAL_FIELD) {
+                                        val ADDITIONAL_FIELD = VK_UPDATE.NEW_MESSAGE.ADDITIONAL_FIELD
+                                        if (updateItem[ADDITIONAL_FIELD].isJsonObject) {
+                                            updateItem[ADDITIONAL_FIELD].asJsonObject.get("fwd")?.asString
+                                        }
+                                        else {
+                                            Log.d(LOG_TAG, "$methodName field $ADDITIONAL_FIELD exists, " +
+                                                    "but isJsonObject = false")
+                                        }
+                                    }
+                                    val datetime = (System.currentTimeMillis() / 1000L).toInt()
+                                    Event.EditMessage(
+                                        message = Message(
+                                            id = updateItem[VK_UPDATE.NEW_MESSAGE.MESSAGE_ID].asLong,
+                                            chatId = updateItem[VK_UPDATE.NEW_MESSAGE.MINOR_ID].asLong,
+                                            userId = updateItem[VK_UPDATE.NEW_MESSAGE.MINOR_ID].asLong,
+                                            text = updateItem[VK_UPDATE.NEW_MESSAGE.TEXT].asString,
+                                            isMyMessage = updateItem[VK_UPDATE.NEW_MESSAGE.FLAGS].asInt and 2 != 0,
+                                            read = false,
+                                            date = datetime,
+                                            time = dateFormat.format(datetime * 1000L),
+                                            fwdMessages = null,
+                                            replyTo = null,
+                                            messenger = Messengers.VK
+                                        )
                                     )
                                 }
                                 VK_UPDATE.EVENTS.READ_INGOING -> {

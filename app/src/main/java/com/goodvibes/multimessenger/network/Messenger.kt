@@ -21,7 +21,7 @@ interface Messenger {
     fun getMessagesFromChat(
         chat_id: Long,
         count: Int,
-        first_msg: Int = 0,
+        offset: Int = 0,
         first_msg_id: Long = 0,
         callback: (MutableList<Message>) -> Unit
     )
@@ -32,9 +32,22 @@ interface Messenger {
     )
 
     fun sendMessage(
-        user_id: Long,
+        chat_id: Long,
         text: String,
         callback: (Long) -> Unit = { }
+    )
+
+    fun editMessage(
+        chat_id: Long,
+        message_id: Long,
+        text: String,
+        callback: (Long) -> Unit = { }
+    )
+
+    fun deleteMessages(
+        chat_id: Long,
+        message_ids: List<Long>,
+        callback: (List<Int>) -> Unit = { }
     )
 
     fun markAsRead(
@@ -42,7 +55,7 @@ interface Messenger {
         message_ids: List<Long>?,
         start_message_id: Long?,
         mark_conversation_as_read: Boolean = false,
-        callback: (Int) -> Unit
+        callback: (Int) -> Unit = { }
     )
 
     fun startUpdateListener(

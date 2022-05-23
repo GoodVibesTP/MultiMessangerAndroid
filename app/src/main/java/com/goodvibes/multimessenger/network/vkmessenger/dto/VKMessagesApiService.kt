@@ -19,6 +19,7 @@ interface VKMessagesApiService {
         @Query("peer_id") peer_id: Long,
         @Query("count") count: Int,
         @Query("offset") offset: Int = 0,
+        @Query("start_message_id") start_message_id: Long? = null,
         @Query("random_id") random_id: Int = 0,
         @Query("extended") extended: Int = 1
     ): Call<VKRespond<VKMessagesGetHistoryResponse>>
@@ -37,6 +38,21 @@ interface VKMessagesApiService {
         @Query("message") message: String,
         @Query("random_id") random_id: Int = 0
     ): Call<VKRespond<Long>>
+
+    @GET("method/messages.edit?v=5.131")
+    fun edit(
+        @Query("access_token") access_token: String,
+        @Query("peer_id") peer_id: Long,
+        @Query("message_id") message_id: Long,
+        @Query("message") message: String
+    ): Call<VKRespond<Long>>
+
+    @GET("method/messages.delete?v=5.131")
+    fun delete(
+        @Query("access_token") access_token: String,
+        @Query("peer_id") peer_id: Long? = null,
+        @Query("message_ids") message_ids: String
+    ): Call<VKRespond<Any>>
 
     @GET("method/messages.markAsRead?v=5.131")
     fun markAsRead(

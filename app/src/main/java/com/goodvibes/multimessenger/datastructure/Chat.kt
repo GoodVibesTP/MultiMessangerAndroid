@@ -1,7 +1,5 @@
 package com.goodvibes.multimessenger.datastructure
 
-import android.graphics.Bitmap
-import org.drinkless.td.libcore.telegram.TdApi
 import java.io.Serializable
 
 data class Chat(

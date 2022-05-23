@@ -65,7 +65,7 @@ object Telegram : Messenger {
     private var chatsLoaded = false
 
     @SuppressLint("SimpleDateFormat")
-    private val dateFormat = SimpleDateFormat("dd/M/yyyy HH:mm:ss", Locale("ru", "ru"))
+    private val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale("ru", "ru"))
 
     private fun toDefaultChat(chat: TdApi.Chat): Chat {
         val lastMessage = if(chat.lastMessage == null) null else {
@@ -210,11 +210,11 @@ object Telegram : Messenger {
     override fun getMessagesFromChat(
         chat_id: Long,
         count: Int,
-        first_msg: Int,
+        offset: Int,
         first_msg_id: Long,
         callback: (MutableList<Message>) -> Unit
     ) {
-        Log.d("TG_LOG", "$first_msg $count")
+        Log.d("TG_LOG", "$offset $count")
         if (haveAuthorization) {
             Log.d("MM_LOG", "getMessagesFromChat")
             val messageList: MutableList<Message> = mutableListOf()
@@ -274,13 +274,13 @@ object Telegram : Messenger {
     }
 
     override fun sendMessage(
-        user_id: Long,
+        chat_id: Long,
         text: String,
         callback: (Long) -> Unit
     ) {
         client.send(
             TdApi.SendMessage(
-                user_id,
+                chat_id,
                 0,
                 0,
                 null,
@@ -292,6 +292,42 @@ object Telegram : Messenger {
                 )
             ),
             SendMessageResultHandler(callback)
+        )
+    }
+
+    override fun editMessage(
+        chat_id: Long,
+        message_id: Long,
+        text: String,
+        callback: (Long) -> Unit
+    ) {
+        client.send(
+            TdApi.EditMessageText(
+                chat_id,
+                message_id,
+                null,
+                TdApi.InputMessageText(
+                    TdApi.FormattedText(text, null),
+                    false,
+                    false
+                )
+            ),
+            SendMessageResultHandler(callback)
+        )
+    }
+
+    override fun deleteMessages(
+        chat_id: Long,
+        message_ids: List<Long>,
+        callback: (List<Int>) -> Unit
+    ) {
+        client.send(
+            TdApi.DeleteMessages(
+                chat_id,
+                message_ids.toLongArray(),
+                false
+            ),
+            DefaultHandler()
         )
     }
 
@@ -369,7 +405,7 @@ object Telegram : Messenger {
             TdApi.AuthorizationStateWaitPhoneNumber.CONSTRUCTOR -> {
                 Log.d(LOG_TAG,
                     "onAuthorizationStateUpdated -> AuthorizationStateWaitPhoneNumber")
-//                val phoneNumber: String = "+79777569732"
+//                val phoneNumber: String = "+7your_phone_number"
 //                client.send(
 //                    TdApi.SetAuthenticationPhoneNumber(
 //                        phoneNumber,
@@ -617,6 +653,23 @@ object Telegram : Messenger {
                 }
                 TdApi.UpdateMessageContent.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateMessageContent")
+                    val updateMessageContent = tdObject as TdApi.UpdateMessageContent
+                    if (registeredForUpdates) {
+                        onEventsCallback(Event.EditMessageContent(
+                            chat_id = updateMessageContent.chatId,
+                            message_id = updateMessageContent.messageId,
+                            text = when(updateMessageContent.newContent.constructor) {
+                                TdApi.MessageText.CONSTRUCTOR -> {
+                                    (updateMessageContent.newContent as TdApi.MessageText).text.text
+                                }
+                                else -> {
+                                    "Текст сообщения не поддерживается данной версией приложения"
+                                }
+                            },
+                            messenger = Messengers.TELEGRAM
+                            )
+                        )
+                    }
                 }
                 TdApi.UpdateNewMessage.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateNewMessage, $tdObject")
@@ -639,6 +692,15 @@ object Telegram : Messenger {
                 }
                 TdApi.UpdateDeleteMessages.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateDeleteMessages")
+                    val updateDeleteMessages = tdObject as TdApi.UpdateDeleteMessages
+                    for (message_id in updateDeleteMessages.messageIds) {
+                        onEventsCallback(Event.DeleteMessage(
+                            chat_id = updateDeleteMessages.chatId,
+                            message_id = message_id,
+                            messenger = Messengers.TELEGRAM
+                            )
+                        )
+                    }
                 }
                 TdApi.UpdateChatReplyMarkup.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateChatReplyMarkup")
