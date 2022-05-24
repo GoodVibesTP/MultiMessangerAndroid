@@ -1,5 +1,6 @@
 package com.goodvibes.multimessenger.datastructure
 
+import org.drinkless.td.libcore.telegram.TdApi
 import java.io.Serializable
 
 data class Chat(
@@ -14,4 +15,5 @@ data class Chat(
     var inRead: Long,
     var outRead: Long,
     var unreadMessage: Int?,
+    @Transient var tgAva: TdApi.File? = null
 ) : Serializable

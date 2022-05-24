@@ -2,6 +2,7 @@ package com.goodvibes.multimessenger
 
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.view.LayoutInflater
 import android.view.View
@@ -13,7 +14,11 @@ import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.Messengers
 import com.goodvibes.multimessenger.network.tgmessenger.Telegram
 import com.squareup.picasso.Picasso
-import java.net.URL
+import org.drinkless.td.libcore.telegram.Client
+import org.drinkless.td.libcore.telegram.TdApi
+import java.io.File
+import java.io.FileInputStream
+
 
 //class ListChatsAdapter: ArrayAdapter<Chat> {
 //    public constructor(ctx: Context, chats: List<Chat>) :
@@ -79,9 +84,19 @@ class ListChatsAdapter(
             if (chat.imgUri != null) {
                 Picasso.get().load(chat.imgUri).into(holder.imageViewChatAva)
             } else {
-
-                holder.imageViewChatAva.setImageResource(R.drawable.images)
-
+                if (chat.tgAva != null) {
+                    Telegram.downloadFile(chat.tgAva!!, object : Client.ResultHandler {
+                        override fun onResult(`object`: TdApi.Object?) {
+                            if (`object` is TdApi.File) {
+                                val bitmaps: MutableList<Bitmap> = ArrayList()
+                                val bitmap = getBitmap(`object`.local.path)
+                                holder.imageViewChatAva.setImageBitmap(bitmap)
+                            }
+                        }
+                    })
+                } else {
+                    holder.imageViewChatAva.setImageResource(R.drawable.noava)
+                }
             }
 
             holder.textViewTitle.text = chat.title
@@ -130,6 +145,19 @@ class ListChatsAdapter(
                 mainActivity.startActivity(intent)
             }
         }
+    }
+
+    fun getBitmap(path: String?): Bitmap? {
+        var bitmap: Bitmap? = null
+        try {
+            val f = File(path)
+            val options = BitmapFactory.Options()
+            options.inPreferredConfig = Bitmap.Config.ARGB_8888
+            bitmap = BitmapFactory.decodeStream(FileInputStream(f), null, options)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return bitmap
     }
 
 }

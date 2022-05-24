@@ -47,13 +47,20 @@ class ChatActivityUC(_activityChat: ChatActivity) {
     }
 
     fun getMessageFromChat(chat: Chat, count: Int, first_msg_id: Long = 0, callback: (MutableList<Message>) -> Unit) {
+        var idLastMessage: Long
+        if (chat.lastMessage == null) {
+            idLastMessage = -1
+        } else {
+            idLastMessage = if (first_msg_id != 0L) first_msg_id else chat.lastMessage!!.id
+        }
+
         when(chat.messenger) {
             Messengers.VK -> {
                 vk.getMessagesFromChat(
                     chat.chatId,
                     count,
                     if (first_msg_id != 0L) 1 else 0,
-                    if (first_msg_id != 0L) first_msg_id else chat.lastMessage!!.id,
+                    idLastMessage,
                     callback
                 )
             }
