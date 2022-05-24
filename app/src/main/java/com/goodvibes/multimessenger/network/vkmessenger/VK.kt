@@ -145,19 +145,19 @@ object VK : Messenger {
             img = R.mipmap.tg_icon,
             imgUri = when(conversationWithMessage.conversation.peer.type) {
                 VKMessagesConversationPeerType.CHAT -> {
-                    conversationWithMessage.conversation.chatSettings.photo?.photo200
+                    conversationWithMessage.conversation.chatSettings.photo?.photo100
                 }
                 VKMessagesConversationPeerType.USER -> {
                     val profile = response.profiles?.firstOrNull {
                         it.id == conversationWithMessage.conversation.peer.id
                     }
-                    profile?.photo200
+                    profile?.photo100
                 }
                 VKMessagesConversationPeerType.GROUP -> {
                     val group = response.groups?.firstOrNull {
                         it.id == -conversationWithMessage.conversation.peer.id
                     }
-                    group?.photo200
+                    group?.photo100
                 }
                 else -> null
             },
@@ -412,6 +412,7 @@ object VK : Messenger {
         val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
         val callForVKRespond: Call<VKRespond<VKMessagesGetConversationsByIdResponse>> = messagesService.getConversationsById(
             access_token = this.token,
+            extended = 1,
             peer_ids = chat_id
         )
 
@@ -913,39 +914,40 @@ object VK : Messenger {
                                     }
                                 }
                                 VK_UPDATE.EVENTS.NEW_MESSAGE -> {
-                                    if (updateItem.size > VK_UPDATE.NEW_MESSAGE.ADDITIONAL_FIELD) {
-                                        val ADDITIONAL_FIELD = VK_UPDATE.NEW_MESSAGE.ADDITIONAL_FIELD
-                                        if (updateItem[ADDITIONAL_FIELD].isJsonObject) {
-                                            updateItem[ADDITIONAL_FIELD].asJsonObject.get("fwd")?.asString
-                                        }
-                                        else {
-                                            Log.d(LOG_TAG, "$methodName field $ADDITIONAL_FIELD exists, " +
-                                                    "but isJsonObject = false")
+//                                    var getAllMessageInfo = false
+//                                    if (updateItem.size > VK_UPDATE.NEW_MESSAGE.ADDITIONAL_FIELD) {
+//                                        val ADDITIONAL_FIELD = VK_UPDATE.NEW_MESSAGE.ADDITIONAL_FIELD
+//                                        if (updateItem[ADDITIONAL_FIELD].isJsonObject) {
+//                                            updateItem[ADDITIONAL_FIELD].asJsonObject.get("fwd")?.asString
+//                                        }
+//                                        else {
+//                                            Log.d(LOG_TAG, "$methodName field $ADDITIONAL_FIELD exists, " +
+//                                                    "but isJsonObject = false")
+//                                        }
+//                                    }
+//                                    val datetime = (System.currentTimeMillis() / 1000L).toInt()
+
+                                    getMessagesFromChat(
+                                        chat_id = updateItem[VK_UPDATE.NEW_MESSAGE.MINOR_ID].asLong,
+                                        count = 1,
+                                        offset = 0,
+                                        first_msg_id = updateItem[VK_UPDATE.NEW_MESSAGE.MESSAGE_ID].asLong
+                                    ) {
+                                        if (it.isNotEmpty()) {
+                                            callback(
+                                                Event.NewMessage(
+                                                    message = it[0],
+                                                    direction = if (updateItem[VK_UPDATE.NEW_MESSAGE.FLAGS].asInt and 2 == 0) {
+                                                        Event.NewMessage.Direction.INGOING
+                                                    }
+                                                    else {
+                                                        Event.NewMessage.Direction.OUTGOING
+                                                    }
+                                                )
+                                            )
                                         }
                                     }
-                                    val datetime = (System.currentTimeMillis() / 1000L).toInt()
-                                    Event.NewMessage(
-                                        message = Message(
-                                            id = updateItem[VK_UPDATE.NEW_MESSAGE.MESSAGE_ID].asLong,
-                                            chatId = updateItem[VK_UPDATE.NEW_MESSAGE.MINOR_ID].asLong,
-                                            userId = updateItem[VK_UPDATE.NEW_MESSAGE.MINOR_ID].asLong,
-                                            text = updateItem[VK_UPDATE.NEW_MESSAGE.TEXT].asString,
-                                            isMyMessage = updateItem[VK_UPDATE.NEW_MESSAGE.FLAGS].asInt and 2 != 0,
-                                            read = false,
-                                            date = datetime,
-                                            time = dateFormat.format(datetime * 1000L),
-                                            fwdMessages = null,
-                                            replyTo = null,
-                                            messenger = Messengers.VK,
-                                            attachments = null
-                                        ),
-                                        direction = if (updateItem[VK_UPDATE.NEW_MESSAGE.FLAGS].asInt and 2 == 0) {
-                                            Event.NewMessage.Direction.INGOING
-                                        }
-                                        else {
-                                            Event.NewMessage.Direction.OUTGOING
-                                        }
-                                    )
+                                    Event.DefaultEvent()
                                 }
                                 VK_UPDATE.EVENTS.MESSAGE_EDITED -> {
                                     if (updateItem.size > VK_UPDATE.NEW_MESSAGE.ADDITIONAL_FIELD) {

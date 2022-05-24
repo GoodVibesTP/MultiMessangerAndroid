@@ -302,6 +302,11 @@ class ChatActivity : AppCompatActivity() {
                     markAsReadUntil(listMessage[firstCompletelyVisibleItem].id)
                 }
             }
+            else {
+                if (listMessage[0].id > currentChat.inRead) {
+                    markAsReadUntil(listMessage[0].id)
+                }
+            }
         }
     }
 

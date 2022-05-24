@@ -160,6 +160,7 @@ class MainActivity : AppCompatActivity() {
                             break
                         }
                     }
+                    chat.lastMessage = event.message
                     allChats.add(0, chat)
                     listChatsAdapter.notifyDataSetChanged()
                 }
