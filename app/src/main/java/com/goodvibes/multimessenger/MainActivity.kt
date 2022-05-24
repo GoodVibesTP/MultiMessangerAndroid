@@ -44,6 +44,7 @@ import kotlinx.coroutines.launch
 import java.util.*
 import kotlin.Comparator
 
+import okhttp3.internal.notify
 
 class MainActivity : AppCompatActivity() {
     lateinit var activityMainBinding : ActivityMainBinding;
@@ -58,6 +59,7 @@ class MainActivity : AppCompatActivity() {
     val tg = Telegram
     var counter = 0
     lateinit var listChatsAdapter: ListChatsAdapter
+    var spinnerInit = false
 
 
     val dbUseCase = MyDBUseCase(myDbManager)
@@ -105,12 +107,9 @@ class MainActivity : AppCompatActivity() {
             Picasso.get().load(user.imgUri).into(userAva)
         }
 
-        val names = arrayListOf("Sasha", "Masha", "Lena", "Alla", "Lelya")
-        var spinnerAdapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, names)
+        folders = myDbManager.getFolders()
 
         spinner = findViewById(R.id.sp_option)
-        folders = myDbManager.getFolders()
-        spinnerAdapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, folders)
 
         callback = ListChatsActionModeCallback()
     }
@@ -120,7 +119,7 @@ class MainActivity : AppCompatActivity() {
         allChats.clear()
         numberLastChat = 0
         getStartChats()
-        Log.d("FOLDERS", "FUCK")
+        Log.d("FOLDERS", "RESUME")
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -195,10 +194,14 @@ class MainActivity : AppCompatActivity() {
 
         Log.d("RESUME", "PS")
 
+        Log.d("FOLDERS", "getStartChats")
+
         useCase.getAllChats(numberChatOnPage, 0) { chats ->
             GlobalScope.launch(Dispatchers.Main) {
+                Log.d("FOLDERS", "getStartChats 1")
+
                 numberLastChat = numberChatOnPage
-                allChats.addAll(chats)
+                // allChats.addAll(chats)
 
                 val tempStartChats : MutableList<Chat> = mutableListOf()
 
@@ -211,8 +214,10 @@ class MainActivity : AppCompatActivity() {
 
                 startChats.addAll(tempStartChats)
 
-                allChats.sortWith(ComparatorChats().reversed())
-                listChatsAdapter.notifyDataSetChanged()
+                Log.d("FOLDERS", "getStartChats 2")
+
+               // allChats.sortWith(ComparatorChats().reversed())
+                // listChatsAdapter.notifyDataSetChanged()
 
                 activityMainBinding.listChats.addOnScrollListener(OnScrollListenerChats())
 
@@ -222,50 +227,52 @@ class MainActivity : AppCompatActivity() {
 
                 swipeContainer?.setRefreshing(false);
 
+                spinnerAdapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, folders)
+
                 spinner.adapter = spinnerAdapter
-                folders = myDbManager.getFolders()
+
                 folders.forEachIndexed { index, element ->
                     if (element == currentFolder.name) {
                         spinner.setSelection(index)
                     }
                 }
 
-                spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                    override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
+                if (!spinnerInit) {
+                    spinnerInit = true
+                    spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+                        override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
+                            Log.d("FOLDERS", "OK1")
 
-                        spinnerAdapter.clear()
-                        spinnerAdapter.addAll(folders)
-                        spinnerAdapter.notifyDataSetChanged()
-                        Log.d("FOLDERS", "OK1")
+                            val folderUID = myDbManager.getFolderUIDByName(folders.get(p2))
+                            Log.d("FOLDERS", "$folderUID") // папка вкшная
 
-                        val folderUID = myDbManager.getFolderUIDByName(folders.get(p2))
-                        Log.d("FOLDERS", "$folderUID") // папка вкшная
+                            val chatsDB = myDbManager.getChatsByFolder(folderUID)
 
-                        val chatsDB = myDbManager.getChatsByFolder(folderUID)
+                            Log.d("FOLDERS", "${chatsDB.size}")
 
-
-                        val tempChats : MutableList<Chat> = mutableListOf()
-
-                        for (item in chatsDB) {
-                            for (chat in startChats) {
-                                if (chat.chatId == item) {
-                                    tempChats.add(chat)
+                            val tempChats : MutableList<Chat> = mutableListOf()
+                            Log.d("FOLDERS", "start chats size ${startChats.size}")
+                            for (item in chatsDB) {
+                                for (chat in startChats) {
+                                    if (chat.chatId == item) {
+                                        tempChats.add(chat)
+                                    }
                                 }
                             }
+
+                            Log.d("FOLDERS", "${tempChats.size}")
+                            Log.d("FOLDERS", "----------------------------------------------------------------")
+
+                            allChats.clear()
+                            allChats.addAll(tempChats)
+                            allChats.sortWith(ComparatorChats().reversed())
+                            listChatsAdapter.notifyDataSetChanged()
+                            currentFolder.name = folders.get(p2)
                         }
 
-                        Log.d("FOLDERS", "${tempChats.size}")
-                        Log.d("FOLDERS", "----------------------------------------------------------------")
-
-                        allChats.clear()
-                        allChats.addAll(tempChats)
-                        allChats.sortWith(ComparatorChats().reversed())
-                        listChatsAdapter.notifyDataSetChanged()
-                        currentFolder.name = folders.get(p2)
-                    }
-
-                    override fun onNothingSelected(p0: AdapterView<*>?) {
-                        TODO("Not yet implemented")
+                        override fun onNothingSelected(p0: AdapterView<*>?) {
+                            TODO("Not yet implemented")
+                        }
                     }
                 }
             }
@@ -344,26 +351,6 @@ class MainActivity : AppCompatActivity() {
            val totalItemCount = layoutManager.itemCount
            val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
 
-            folders = myDbManager.getFolders()
-            spinnerAdapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, folders)
-
-            spinner.adapter = spinnerAdapter
-
-            spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
-                    folders = myDbManager.getFolders()
-                    spinnerAdapter.clear()
-                    spinnerAdapter.addAll(folders)
-                    spinnerAdapter.notifyDataSetChanged()
-
-
-                }
-
-                override fun onNothingSelected(p0: AdapterView<*>?) {
-                    TODO("Not yet implemented")
-                }
-            }
-
            if (!isLoadingChatVK &&  (firstVisibleItemPosition + visibleItemCount >= totalItemCount)) {
                isLoadingChatVK = true
                useCase.getAllChats(numberChatOnPage, numberLastChat) { chats ->
@@ -375,20 +362,6 @@ class MainActivity : AppCompatActivity() {
                    for (item in chats) {
                        dbUseCase.addChatsToPrimaryFolderIfNotExist(item)
                    }
-
-                   val chatsDB = myDbManager.getChatsByFolder(currentFolder.folderId)
-
-                   val tempChats : MutableList<Chat> = mutableListOf()
-
-                   for (item in chatsDB) {
-                       for (chat in chats) {
-                           if (chat.chatId == item) {
-                               tempChats.add(chat)
-                           }
-                       }
-                   }
-
-                   allChats.addAll(tempChats)
                }
            }
 
