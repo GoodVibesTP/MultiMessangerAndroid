@@ -1,6 +1,8 @@
 package com.goodvibes.multimessenger.util
 
 import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,6 +17,8 @@ import com.goodvibes.multimessenger.R
 import com.goodvibes.multimessenger.datastructure.Message
 import com.goodvibes.multimessenger.datastructure.MessageAttachment
 import com.squareup.picasso.Picasso
+import java.io.File
+import java.io.FileInputStream
 
 
 class ListSingleChatAdapter(
@@ -83,6 +87,16 @@ class ListSingleChatAdapter(
                             LayoutParams(maxWidth, maxWidth * attachment.height / attachment.width)
                         layoutAttachments.addView(imageView)
                     }
+                    is MessageAttachment.TelegramImage -> {
+                        attachment.image.getPath { path ->
+                            val imageView = ImageView(ctx)
+                            imageView.setImageBitmap(getBitmap(path))
+                            val maxWidth = layoutAttachments.width
+                            imageView.layoutParams =
+                                LayoutParams(maxWidth, maxWidth * attachment.height / attachment.width)
+                            layoutAttachments.addView(imageView)
+                        }
+                    }
                 }
             }
         }
@@ -143,5 +157,18 @@ class ListSingleChatAdapter(
             layoutMessageIngoing.setOnClickListener(listener)
             layoutMessageOutgoing.setOnClickListener(listener)
         }
+    }
+
+    fun getBitmap(path: String?): Bitmap? {
+        var bitmap: Bitmap? = null
+        try {
+            val f = File(path)
+            val options = BitmapFactory.Options()
+            options.inPreferredConfig = Bitmap.Config.ARGB_8888
+            bitmap = BitmapFactory.decodeStream(FileInputStream(f), null, options)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        return bitmap
     }
 }

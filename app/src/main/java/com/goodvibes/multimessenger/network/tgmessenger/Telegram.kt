@@ -1,6 +1,7 @@
 package com.goodvibes.multimessenger.network.tgmessenger
 
 import android.annotation.SuppressLint
+import android.graphics.Bitmap
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.goodvibes.multimessenger.R
@@ -67,6 +68,34 @@ object Telegram : Messenger {
     @SuppressLint("SimpleDateFormat")
     private val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale("ru", "ru"))
 
+    class Image(
+        private val file: TdApi.File
+    ) {
+        var isLoaded = false
+        private var path: String? = null
+
+        fun getPath(callback: (String?) -> Unit) {
+            if (isLoaded) {
+                callback(path)
+            }
+            else {
+                downloadFileToPath(file) {
+                    path = it
+                    callback(path)
+                }
+            }
+        }
+    }
+
+    fun downloadFileToPath(file: TdApi.File, callback: (String?) -> Unit) {
+        client.send(
+            TdApi.DownloadFile(
+                file.id, 1,0,0,true
+            ),
+            DownloadFileResultHandler(callback)
+        )
+    }
+
     private fun toDefaultChat(chat: TdApi.Chat): Chat {
         val lastMessage = if(chat.lastMessage == null) null else {
             toDefaultMessage(chat.lastMessage!!)
@@ -79,7 +108,6 @@ object Telegram : Messenger {
                 lastMessage.id <= chat.lastReadInboxMessageId
             }
         }
-        chat.photo
         return Chat(
             chatId = chat.id,
             img = R.mipmap.tg_icon,
@@ -114,6 +142,9 @@ object Telegram : Messenger {
                 TdApi.MessageText.CONSTRUCTOR -> {
                     (message.content as TdApi.MessageText).text.text
                 }
+                TdApi.MessagePhoto.CONSTRUCTOR -> {
+                    "Фотография: "
+                }
                 else -> {
                     "Текст сообщения не поддерживается данной версией приложения"
                 }
@@ -129,7 +160,20 @@ object Telegram : Messenger {
             fwdMessages = null,
             replyTo = null,
             messenger = Messengers.TELEGRAM,
-            attachments = null
+            attachments = when(message.content.constructor) {
+                TdApi.MessagePhoto.CONSTRUCTOR -> {
+                    val tdApiPhotoSize =
+                        (message.content as TdApi.MessagePhoto).photo.sizes.maxByOrNull { it.width }
+                    listOf(
+                        MessageAttachment.TelegramImage(
+                            image = Image(tdApiPhotoSize!!.photo),
+                            width = tdApiPhotoSize.width,
+                            height = tdApiPhotoSize.height
+                        )
+                    )
+                }
+                else -> null
+            }
         )
     }
 
@@ -537,6 +581,16 @@ object Telegram : Messenger {
         override fun onResult(tdObject: TdApi.Object) {
             val sentMessage = (tdObject as TdApi.Message)
             callback(toDefaultMessage(sentMessage).id)
+        }
+    }
+
+    private class DownloadFileResultHandler(
+        val callback: (String?) -> Unit
+    ) : Client.ResultHandler {
+        override fun onResult(tdObject: TdApi.Object) {
+            if (tdObject is TdApi.File) {
+                callback(tdObject.local.path)
+            }
         }
     }
 
