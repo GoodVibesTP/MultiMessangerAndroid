@@ -4,6 +4,7 @@ import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.Event
 import com.goodvibes.multimessenger.datastructure.Message
 import com.goodvibes.multimessenger.datastructure.Messengers
+import com.goodvibes.multimessenger.datastructure.User
 
 interface Messenger {
     val messenger: Messengers
@@ -11,6 +12,11 @@ interface Messenger {
     fun isAuthorized(): Boolean
 
     fun getUserId(): Long
+
+    fun getUser(
+        user_id: Long,
+        callback: (User) -> Unit
+    )
 
     fun getAllChats(
         count: Int,

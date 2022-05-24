@@ -16,7 +16,10 @@ import androidx.recyclerview.widget.RecyclerView
 import com.goodvibes.multimessenger.R
 import com.goodvibes.multimessenger.datastructure.Message
 import com.goodvibes.multimessenger.datastructure.MessageAttachment
+import com.goodvibes.multimessenger.datastructure.User
 import com.squareup.picasso.Picasso
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import java.io.File
 import java.io.FileInputStream
 
@@ -25,7 +28,8 @@ class ListSingleChatAdapter(
     private val ctx: Context,
     val messages: MutableList<Message>,
     val checkedItems: MutableSet<Long>,
-    val onItemCheckStateChanged: (MutableSet<Long>) -> Unit
+    val onItemCheckStateChanged: (MutableSet<Long>) -> Unit,
+    val getMessageSender: (Message, callback: (User) -> Unit) -> Unit
 ): RecyclerView.Adapter<ListSingleChatAdapter.ViewHolder>() {
     private val inflater = LayoutInflater.from(ctx)
 
@@ -57,7 +61,10 @@ class ListSingleChatAdapter(
         }
         else {
             holder.layoutMessageIngoing.visibility = View.VISIBLE
-            holder.textViewSenderIngoing.text = "Hardcoded name"
+            holder.textViewSenderIngoing.text = ""
+            getMessageSender(message) { user ->
+                holder.textViewSenderIngoing.text = "${user.firstName} ${user.lastName}"
+            }
             holder.textViewTextMessageIngoing.text = message.text
             holder.textViewTimeIngoing.text = message.time
             holder.unreadMarkerIngoing.visibility = if (message.read) View.GONE else View.VISIBLE

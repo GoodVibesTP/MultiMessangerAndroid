@@ -62,6 +62,7 @@ object Telegram : Messenger {
     private lateinit var client: Client
 
     private val contacts = mutableMapOf<Long,TdApi.User>()
+    private val mapTGUsers = mutableMapOf<Long, User>()
     private val chats = mutableMapOf<Long, TdApi.Chat>()
     private var chatsLoaded = false
 
@@ -175,6 +176,22 @@ object Telegram : Messenger {
                 else -> null
             }
         )
+    }
+
+    private fun toDefaultUser(tgUser: TdApi.User) : User {
+        return User(
+            userId = tgUser.id,
+            firstName = tgUser.firstName,
+            lastName = tgUser.lastName,
+            imgUri = ""
+        )
+    }
+
+    override fun getUser(user_id: Long, callback: (User) -> Unit) {
+        val tgUser = mapTGUsers[user_id]
+        if (tgUser != null) {
+            callback(tgUser)
+        }
     }
 
     fun sendAuthPhone(phone: String) {
@@ -633,6 +650,7 @@ object Telegram : Messenger {
                     if (user.isContact) {
                         contacts[user.id] = user
                     }
+                    mapTGUsers[user.id] = toDefaultUser(user)
                 }
                 TdApi.UpdateUserStatus.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateUserStatus")

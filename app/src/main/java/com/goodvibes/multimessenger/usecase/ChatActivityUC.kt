@@ -5,6 +5,7 @@ import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.Event
 import com.goodvibes.multimessenger.datastructure.Message
 import com.goodvibes.multimessenger.datastructure.Messengers
+import com.goodvibes.multimessenger.datastructure.User
 import com.goodvibes.multimessenger.network.tgmessenger.Telegram
 import com.goodvibes.multimessenger.network.vkmessenger.VK
 
@@ -12,6 +13,17 @@ class ChatActivityUC(_activityChat: ChatActivity) {
     var activityChat = _activityChat
     val tg = Telegram
     val vk = VK
+
+    fun getMessageSender(message: Message, callback: (User) -> Unit) {
+        when(message.messenger) {
+            Messengers.VK -> {
+                vk.getUser(message.userId, callback)
+            }
+            Messengers.TELEGRAM -> {
+                tg.getUser(message.userId, callback)
+            }
+        }
+    }
 
     fun sendMessage(message: Message, callback: (Long) -> Unit) {
         when(message.messenger) {

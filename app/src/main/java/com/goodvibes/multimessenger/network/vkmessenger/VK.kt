@@ -58,6 +58,8 @@ object VK : Messenger {
     private val messagesService = retrofit.create(VKMessagesApiService::class.java)
     private val usersService = retrofit.create(VKUsersApiService::class.java)
 
+    private val mapVKUsers: MutableMap<Long, User> = mutableMapOf()
+
     private fun toDefaultChat(
         conversationWithMessage: VKMessagesConversationWithMessage,
         response: VKMessagesGetConversationsResponse,
@@ -251,6 +253,17 @@ object VK : Messenger {
         return attachments
     }
 
+    private fun toDefaultUser(
+        vkUser: VKUserFull
+    ) : User {
+        return User(
+            userId = vkUser.id,
+            firstName = vkUser.firstName ?: "",
+            lastName = vkUser.lastName ?: "",
+            imgUri = vkUser.photo200 ?: vkUser.photo100 ?: ""
+        )
+    }
+
     override fun isAuthorized(): Boolean {
         return haveAuthorization
     }
@@ -299,6 +312,11 @@ object VK : Messenger {
                             for (item in responseBody.response.items) {
                                 val nextChat = toDefaultChat(item, responseBody.response, currentUserId)
                                 chatArray.add(nextChat)
+                            }
+                            if (responseBody.response.profiles != null) {
+                                for (vkUser in responseBody.response.profiles) {
+                                    mapVKUsers[vkUser.id] = toDefaultUser(vkUser)
+                                }
                             }
                             callback(chatArray)
                         }
@@ -443,6 +461,11 @@ object VK : Messenger {
                                 conversation = responseBody.response.items[0],
                                 lastMessage = null
                             )
+                            if (responseBody.response.profiles != null) {
+                                for (vkUser in responseBody.response.profiles) {
+                                    mapVKUsers[vkUser.id] = toDefaultUser(vkUser)
+                                }
+                            }
                             val newChat = toDefaultChat(conversationWithMessage, responseBody.response, currentUserId)
                             callback(newChat)
                         }
@@ -782,15 +805,41 @@ object VK : Messenger {
         Log.d(LOG_TAG, "$methodName request: ${callForVKRespond.request()}")
     }
 
+    override fun getUser(user_id: Long, callback: (User) -> Unit) {
+        val loadedUser = mapVKUsers[user_id]
+        if (loadedUser != null) {
+            callback(loadedUser)
+        }
+        else {
+            getUserInfo(user_id.toString(), "photo_200") {
+                val user = User(
+                    userId = it[0].id,
+                    firstName = it[0].firstName ?: "",
+                    lastName = it[0].lastName ?: "",
+                    imgUri = it[0].photoMaxOrig ?: it[0].photo200 ?: it[0].photo100 ?: ""
+                )
+                mapVKUsers[user_id] = user
+                callback(user)
+            }
+        }
+    }
+
     fun getCurrentUser(callback: (User) -> Unit) {
-        getUserInfo(null, "photo_200") {
-            val currentUser = User(
-                userId = it[0].id,
-                firstName = it[0].firstName ?: "",
-                lastName = it[0].lastName ?: "",
-                imgUri = it[0].photoMaxOrig ?: it[0].photo200 ?: it[0].photo100 ?: ""
-            )
-            callback(currentUser)
+        val loadedUser = mapVKUsers[currentUserId]
+        if (loadedUser != null) {
+            callback(loadedUser)
+        }
+        else {
+            getUserInfo(null, "photo_200") {
+                val currentUser = User(
+                    userId = it[0].id,
+                    firstName = it[0].firstName ?: "",
+                    lastName = it[0].lastName ?: "",
+                    imgUri = it[0].photoMaxOrig ?: it[0].photo200 ?: it[0].photo100 ?: ""
+                )
+                mapVKUsers[currentUserId] = currentUser
+                callback(currentUser)
+            }
         }
     }
 

@@ -16,6 +16,7 @@ import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.Message
 import com.goodvibes.multimessenger.databinding.ActivityChatBinding
 import com.goodvibes.multimessenger.datastructure.Event
+import com.goodvibes.multimessenger.datastructure.User
 import com.goodvibes.multimessenger.usecase.ChatActivityUC
 import com.goodvibes.multimessenger.util.ListSingleChatAdapter
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +48,7 @@ class ChatActivity : AppCompatActivity() {
     var actionMode: ActionMode? = null
 
     private val onItemCheckStateChanged: (MutableSet<Long>) -> Unit
+    lateinit var getMessageSender: (Message, callback: (User) -> Unit) -> Unit
 
     var modeEditMessage = false
     var currentEditMessageId: Long = 0
@@ -80,6 +82,13 @@ class ChatActivity : AppCompatActivity() {
 
         currentChat = intent.extras!!.get("Chat") as Chat
         usecase = ChatActivityUC(this)
+        getMessageSender = { message, callback ->
+            usecase.getMessageSender(message) { user ->
+                GlobalScope.launch(Dispatchers.Main) {
+                    callback(user)
+                }
+            }
+        }
         toolbar = findViewById(R.id.toolbar)
         toolbar.title = currentChat.title
         setSupportActionBar(toolbar)
@@ -149,7 +158,8 @@ class ChatActivity : AppCompatActivity() {
             this@ChatActivity,
             listMessage,
             checkedItems,
-            onItemCheckStateChanged
+            onItemCheckStateChanged,
+            getMessageSender
         )
         activityChatBinding.listMessage.adapter = listMessageAdapter
         activityChatBinding.listMessage.addOnScrollListener(OnScrollListenerChats())
