@@ -62,7 +62,8 @@ class MainActivity : AppCompatActivity() {
     val dbUseCase = MyDBUseCase(myDbManager)
 
 
-    private var numberLastChat: Int = 0
+    private var numberLastChatVK: Int = 0
+    private var numberLastChatTG: Int = 0
 
     private var isLoadingChatVK: Boolean = false
     private var isLoadingChatTG: Boolean = false
@@ -127,9 +128,10 @@ class MainActivity : AppCompatActivity() {
             currentFolder.name = folders.get(p2)
             allChats.clear()
             listChatsAdapter.notifyDataSetChanged()
-            numberLastChat = 0
+            numberLastChatVK = 0
+            numberLastChatTG = 0
             if (!isLoadingChatVK && !isLoadingChatTG) {
-                useCase.getAllChats(numberChatOnPage, numberLastChat) { chats ->
+                useCase.getAllChats(numberChatOnPage, numberLastChatVK, numberLastChatTG) { chats ->
                     GlobalScope.launch(Dispatchers.Main) {
                         val folderUID = myDbManager.getFolderUIDByName(folders.get(p2))
                         val chatsDB = myDbManager.getChatsByFolder(folderUID)
@@ -146,14 +148,15 @@ class MainActivity : AppCompatActivity() {
                         } else {
                             tempChats.addAll(chats)
                         }
-                        numberLastChat += numberChatOnPage
                         allChats.addAll(tempChats)
                         allChats.sortWith(ComparatorChats().reversed())
                         listChatsAdapter.notifyDataSetChanged()
                         if (chats[0].messenger == Messengers.VK) {
                             isLoadingChatVK = false
+                            numberLastChatVK+=numberChatOnPage
                         } else {
                             isLoadingChatTG = false
+                            numberLastChatTG+=numberChatOnPage
                         }
                     }
                 }
@@ -212,7 +215,8 @@ class MainActivity : AppCompatActivity() {
         swipeContainer = findViewById(R.id.swipeContainer);
         swipeContainer?.setOnRefreshListener(OnRefreshListener {
             allChats.clear()
-            numberLastChat = 0
+            numberLastChatVK = 0
+            numberLastChatTG = 0
             getStartChats()
         })
     }
@@ -256,11 +260,10 @@ class MainActivity : AppCompatActivity() {
         if (!isLoadingChatTG && !isLoadingChatVK) {
             isLoadingChatTG = true
             isLoadingChatVK = true
-            useCase.getAllChats(numberChatOnPage, 0) { chats ->
+            useCase.getAllChats(numberChatOnPage, 0, 0) { chats ->
                 GlobalScope.launch(Dispatchers.Main) {
                     //Log.d("FOLDERS", "getStartChats 1")
 
-                    numberLastChat += numberChatOnPage
 
                     val folderUID = myDbManager.getFolderUIDByName(currentFolder.name)
                     val chatsDB = myDbManager.getChatsByFolder(folderUID)
@@ -277,15 +280,18 @@ class MainActivity : AppCompatActivity() {
                     } else {
                         tempChats.addAll(chats)
                     }
-                    numberLastChat += numberChatOnPage
                     allChats.addAll(tempChats)
                     allChats.sortWith(ComparatorChats().reversed())
                     listChatsAdapter.notifyDataSetChanged()
                     swipeContainer?.setRefreshing(false);
                     if (chats[0].messenger == Messengers.VK) {
                         isLoadingChatVK = false
+                        numberLastChatVK += numberChatOnPage
+
                     } else {
                         isLoadingChatTG = false
+                        numberLastChatTG += numberChatOnPage
+
                     }
                 }
             }
@@ -371,13 +377,16 @@ class MainActivity : AppCompatActivity() {
            if (!isLoadingChatVK &&!isLoadingChatTG &&  (firstVisibleItemPosition + visibleItemCount >= totalItemCount)) {
                isLoadingChatVK = true
                isLoadingChatTG = true
-               useCase.getAllChats(numberChatOnPage, numberLastChat) { chats ->
+               useCase.getAllChats(numberChatOnPage, numberLastChatVK, numberLastChatTG) { chats ->
                    GlobalScope.launch(Dispatchers.Main) {
-                       numberLastChat += numberChatOnPage
                        if (chats[0].messenger == Messengers.VK) {
                            isLoadingChatVK = false
+                           numberLastChatVK += numberChatOnPage
+
                        } else {
                            isLoadingChatTG = false
+                           numberLastChatTG += numberChatOnPage
+
                        }
                        val folderUID = myDbManager.getFolderUIDByName(currentFolder.name)
                        val chatsDB = myDbManager.getChatsByFolder(folderUID)
@@ -394,7 +403,6 @@ class MainActivity : AppCompatActivity() {
                        } else {
                            tempChats.addAll(chats)
                        }
-                       numberLastChat += numberChatOnPage
                        allChats.addAll(tempChats)
                        allChats.sortWith(ComparatorChats().reversed())
                        listChatsAdapter.notifyDataSetChanged()
