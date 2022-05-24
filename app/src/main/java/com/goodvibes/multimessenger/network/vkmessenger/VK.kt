@@ -3,11 +3,8 @@ package com.goodvibes.multimessenger.network.vkmessenger
 import android.annotation.SuppressLint
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
-import com.goodvibes.multimessenger.datastructure.Chat
-import com.goodvibes.multimessenger.datastructure.Event
-import com.goodvibes.multimessenger.datastructure.Message
-import com.goodvibes.multimessenger.datastructure.Messengers
-import com.goodvibes.multimessenger.datastructure.User
+import com.goodvibes.multimessenger.R
+import com.goodvibes.multimessenger.datastructure.*
 import com.goodvibes.multimessenger.network.Messenger
 import com.goodvibes.multimessenger.network.vkmessenger.dto.*
 import com.vk.api.sdk.VK as OriginalVKClient
@@ -44,6 +41,7 @@ object VK : Messenger {
 
     private var token = "893b680398d098bcfb8945f59f8aa671f078c9fe77f3bfc600956e3cf5168c94dedd87de401f179c19455"
 
+
     private val permissions = arrayListOf<VKScope>()
 
     private val tokenTracker = object: VKTokenExpiredHandler {
@@ -60,6 +58,199 @@ object VK : Messenger {
 
     private val messagesService = retrofit.create(VKMessagesApiService::class.java)
     private val usersService = retrofit.create(VKUsersApiService::class.java)
+
+    private fun toDefaultChat(
+        conversationWithMessage: VKMessagesConversationWithMessage,
+        response: VKMessagesGetConversationsResponse,
+        currentUserId: Long
+    ) : Chat {
+        val lastMessage = toDefaultMessage(conversationWithMessage.lastMessage, currentUserId)
+        if (lastMessage != null) {
+            lastMessage.read = if (lastMessage.isMyMessage) {
+                lastMessage.id <= conversationWithMessage.conversation.outRead
+            }
+            else {
+                lastMessage.id <= conversationWithMessage.conversation.inRead
+            }
+        }
+
+        return Chat(
+            chatId = conversationWithMessage.conversation.peer.id,
+            img = R.mipmap.tg_icon,
+            imgUri = when(conversationWithMessage.conversation.peer.type) {
+                VKMessagesConversationPeerType.CHAT -> {
+                    conversationWithMessage.conversation.chatSettings.photo?.photo100
+                }
+                VKMessagesConversationPeerType.USER -> {
+                    val profile = response.profiles?.firstOrNull {
+                        it.id == conversationWithMessage.conversation.peer.id
+                    }
+                    profile?.photo100
+                }
+                VKMessagesConversationPeerType.GROUP -> {
+                    val group = response.groups?.firstOrNull {
+                        it.id == -conversationWithMessage.conversation.peer.id
+                    }
+                    group?.photo100
+                }
+                else -> null
+            },
+            title = when(conversationWithMessage.conversation.peer.type) {
+                VKMessagesConversationPeerType.CHAT -> {
+                    conversationWithMessage.conversation.chatSettings.title
+                }
+                VKMessagesConversationPeerType.USER -> {
+                    val profile = response.profiles?.firstOrNull {
+                        it.id == conversationWithMessage.conversation.peer.id
+                    }
+                    "${profile?.firstName} ${profile?.lastName}"
+                }
+                VKMessagesConversationPeerType.GROUP -> {
+                    val group = response.groups?.firstOrNull {
+                        it.id == - conversationWithMessage.conversation.peer.id
+                    }
+                    "${group?.name}"
+                }
+                else -> ""
+            },
+            chatType = when(conversationWithMessage.conversation.peer.type) {
+                VKMessagesConversationPeerType.CHAT -> ChatType.CHAT
+                VKMessagesConversationPeerType.USER -> ChatType.USER
+                VKMessagesConversationPeerType.GROUP -> ChatType.GROUP
+                else -> ChatType.OTHER
+            },
+            messenger = Messengers.VK,
+            lastMessage = lastMessage,
+            inRead = conversationWithMessage.conversation.inRead,
+            outRead = conversationWithMessage.conversation.outRead,
+            unreadMessage = conversationWithMessage.conversation.unreadCount
+        )
+    }
+
+    private fun toDefaultChat(
+        conversationWithMessage: VKMessagesConversationWithMessage,
+        response: VKMessagesGetConversationsByIdResponse,
+        currentUserId: Long
+    ) : Chat {
+        val lastMessage = toDefaultMessage(conversationWithMessage.lastMessage, currentUserId)
+        if (lastMessage != null) {
+            lastMessage.read = if (lastMessage.isMyMessage) {
+                lastMessage.id <= conversationWithMessage.conversation.outRead
+            }
+            else {
+                lastMessage.id <= conversationWithMessage.conversation.inRead
+            }
+        }
+        return Chat(
+            chatId = conversationWithMessage.conversation.peer.id,
+            img = R.mipmap.tg_icon,
+            imgUri = when(conversationWithMessage.conversation.peer.type) {
+                VKMessagesConversationPeerType.CHAT -> {
+                    conversationWithMessage.conversation.chatSettings.photo?.photo100
+                }
+                VKMessagesConversationPeerType.USER -> {
+                    val profile = response.profiles?.firstOrNull {
+                        it.id == conversationWithMessage.conversation.peer.id
+                    }
+                    profile?.photo100
+                }
+                VKMessagesConversationPeerType.GROUP -> {
+                    val group = response.groups?.firstOrNull {
+                        it.id == -conversationWithMessage.conversation.peer.id
+                    }
+                    group?.photo100
+                }
+                else -> null
+            },
+            title = when(conversationWithMessage.conversation.peer.type) {
+                VKMessagesConversationPeerType.CHAT -> {
+                    conversationWithMessage.conversation.chatSettings.title
+                }
+                VKMessagesConversationPeerType.USER -> {
+                    val profile = response.profiles?.firstOrNull {
+                        it.id == conversationWithMessage.conversation.peer.id
+                    }
+                    "${profile?.firstName} ${profile?.lastName}"
+                }
+                VKMessagesConversationPeerType.GROUP -> {
+                    val group = response.groups?.firstOrNull {
+                        it.id == - conversationWithMessage.conversation.peer.id
+                    }
+                    "${group?.name}"
+                }
+                else -> ""
+            },
+            chatType = when(conversationWithMessage.conversation.peer.type) {
+                VKMessagesConversationPeerType.CHAT -> ChatType.CHAT
+                VKMessagesConversationPeerType.USER -> ChatType.USER
+                VKMessagesConversationPeerType.GROUP -> ChatType.GROUP
+                else -> ChatType.OTHER
+            },
+            messenger = Messengers.VK,
+            lastMessage = lastMessage,
+            inRead = conversationWithMessage.conversation.inRead,
+            outRead = conversationWithMessage.conversation.outRead,
+            unreadMessage = conversationWithMessage.conversation.unreadCount
+        )
+    }
+
+    private fun toDefaultMessage(
+        message: VKMessagesMessage?,
+        currentUserId: Long
+    ) : Message? {
+        if (message == null) {
+            return null
+        }
+        var fwdMessages: ArrayList<Message>? = null
+        if (message.fwdMessages != null) {
+            fwdMessages = arrayListOf()
+            fwdMessages.ensureCapacity(message.fwdMessages.size)
+            for (msg in message.fwdMessages) {
+                fwdMessages.add(toDefaultMessage(msg, currentUserId)!!)
+            }
+        }
+
+        return Message(
+            id = message.id,
+            chatId = message.peerId,
+            userId = message.fromId,
+            text = message.text,
+            date = message.date,
+            time = VK.dateFormat.format(message.date * 1000L),
+            isMyMessage = currentUserId == message.fromId,
+            fwdMessages = fwdMessages,
+            replyTo = toDefaultMessage(message.replyMessage, currentUserId),
+            messenger = Messengers.VK,
+            attachments = toDefaultAttachments(message.attachments)
+        )
+    }
+
+    private fun toDefaultAttachments(
+        vkAttachments: List<VKMessagesAttachment>?
+    ) : List<MessageAttachment>? {
+        var attachments: List<MessageAttachment>? = null
+        if (vkAttachments != null && vkAttachments.isNotEmpty()) {
+            attachments = mutableListOf()
+            for (vkAttachment in vkAttachments) {
+                if (vkAttachment.photo != null) {
+                    val photoBestQuality = vkAttachment.photo.sizes.maxByOrNull { it.width }
+                    if (photoBestQuality != null) {
+                        attachments.add(
+                            MessageAttachment.Image(
+                                height = photoBestQuality.height,
+                                width = photoBestQuality.width,
+                                imgUri = photoBestQuality.url
+                            )
+                        )
+                    }
+                }
+            }
+            if (attachments.isEmpty()) {
+                attachments = null
+            }
+        }
+        return attachments
+    }
 
     override fun isAuthorized(): Boolean {
         return haveAuthorization
@@ -222,6 +413,7 @@ object VK : Messenger {
         val methodName = "${this.javaClass.name}->${object {}.javaClass.enclosingMethod?.name}"
         val callForVKRespond: Call<VKRespond<VKMessagesGetConversationsByIdResponse>> = messagesService.getConversationsById(
             access_token = this.token,
+            extended = 1,
             peer_ids = chat_id
         )
 
@@ -723,38 +915,40 @@ object VK : Messenger {
                                     }
                                 }
                                 VK_UPDATE.EVENTS.NEW_MESSAGE -> {
-                                    if (updateItem.size > VK_UPDATE.NEW_MESSAGE.ADDITIONAL_FIELD) {
-                                        val ADDITIONAL_FIELD = VK_UPDATE.NEW_MESSAGE.ADDITIONAL_FIELD
-                                        if (updateItem[ADDITIONAL_FIELD].isJsonObject) {
-                                            updateItem[ADDITIONAL_FIELD].asJsonObject.get("fwd")?.asString
-                                        }
-                                        else {
-                                            Log.d(LOG_TAG, "$methodName field $ADDITIONAL_FIELD exists, " +
-                                                    "but isJsonObject = false")
+//                                    var getAllMessageInfo = false
+//                                    if (updateItem.size > VK_UPDATE.NEW_MESSAGE.ADDITIONAL_FIELD) {
+//                                        val ADDITIONAL_FIELD = VK_UPDATE.NEW_MESSAGE.ADDITIONAL_FIELD
+//                                        if (updateItem[ADDITIONAL_FIELD].isJsonObject) {
+//                                            updateItem[ADDITIONAL_FIELD].asJsonObject.get("fwd")?.asString
+//                                        }
+//                                        else {
+//                                            Log.d(LOG_TAG, "$methodName field $ADDITIONAL_FIELD exists, " +
+//                                                    "but isJsonObject = false")
+//                                        }
+//                                    }
+//                                    val datetime = (System.currentTimeMillis() / 1000L).toInt()
+
+                                    getMessagesFromChat(
+                                        chat_id = updateItem[VK_UPDATE.NEW_MESSAGE.MINOR_ID].asLong,
+                                        count = 1,
+                                        offset = 0,
+                                        first_msg_id = updateItem[VK_UPDATE.NEW_MESSAGE.MESSAGE_ID].asLong
+                                    ) {
+                                        if (it.isNotEmpty()) {
+                                            callback(
+                                                Event.NewMessage(
+                                                    message = it[0],
+                                                    direction = if (updateItem[VK_UPDATE.NEW_MESSAGE.FLAGS].asInt and 2 == 0) {
+                                                        Event.NewMessage.Direction.INGOING
+                                                    }
+                                                    else {
+                                                        Event.NewMessage.Direction.OUTGOING
+                                                    }
+                                                )
+                                            )
                                         }
                                     }
-                                    val datetime = (System.currentTimeMillis() / 1000L).toInt()
-                                    Event.NewMessage(
-                                        message = Message(
-                                            id = updateItem[VK_UPDATE.NEW_MESSAGE.MESSAGE_ID].asLong,
-                                            chatId = updateItem[VK_UPDATE.NEW_MESSAGE.MINOR_ID].asLong,
-                                            userId = updateItem[VK_UPDATE.NEW_MESSAGE.MINOR_ID].asLong,
-                                            text = updateItem[VK_UPDATE.NEW_MESSAGE.TEXT].asString,
-                                            isMyMessage = updateItem[VK_UPDATE.NEW_MESSAGE.FLAGS].asInt and 2 != 0,
-                                            read = false,
-                                            date = datetime,
-                                            time = dateFormat.format(datetime * 1000L),
-                                            fwdMessages = null,
-                                            replyTo = null,
-                                            messenger = Messengers.VK
-                                        ),
-                                        direction = if (updateItem[VK_UPDATE.NEW_MESSAGE.FLAGS].asInt and 2 == 0) {
-                                            Event.NewMessage.Direction.INGOING
-                                        }
-                                        else {
-                                            Event.NewMessage.Direction.OUTGOING
-                                        }
-                                    )
+                                    Event.DefaultEvent()
                                 }
                                 VK_UPDATE.EVENTS.MESSAGE_EDITED -> {
                                     if (updateItem.size > VK_UPDATE.NEW_MESSAGE.ADDITIONAL_FIELD) {
@@ -780,7 +974,8 @@ object VK : Messenger {
                                             time = dateFormat.format(datetime * 1000L),
                                             fwdMessages = null,
                                             replyTo = null,
-                                            messenger = Messengers.VK
+                                            messenger = Messengers.VK,
+                                            attachments = null
                                         )
                                     )
                                 }

@@ -140,6 +140,7 @@ class ListChatsAdapter(
             view.setOnClickListener { View ->
                 val intent = Intent(mainActivity, ChatActivity::class.java)
                 val chat = mainActivity.listChatsAdapter.chats[position]
+                chat.lastMessage?.attachments = null
                 intent.putExtra("Chat", chat)
                 mainActivity.startActivity(intent)
             }
