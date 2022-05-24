@@ -7,7 +7,7 @@
         >
 
     <androidx.appcompat.widget.Toolbar
-            android:id="@+id/toolbar"
+            android:id="@+id/toolbar_chat"
             android:minHeight="56dp"
             android:layout_width="match_parent"
             android:layout_height="56dp"
@@ -15,18 +15,6 @@
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintHorizontal_bias="1.0">
-
-        <Spinner
-                android:id="@+id/sp_option"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:padding="20dp" />
-
-        <TextView
-                android:id="@+id/option_name"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:gravity= "start"/>
     </androidx.appcompat.widget.Toolbar>
 
 

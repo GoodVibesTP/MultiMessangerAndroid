@@ -35,7 +35,7 @@ class SelectFolder(
 
             val addNewFolderView = rowList.findViewById<RelativeLayout>(R.id.folders_all_add_relative_layout)
             addNewFolderView.setOnClickListener(View.OnClickListener { view ->
-                Log.d("FOLDER DIALOG", "click on create new folder")
+                //Log.d("FOLDER DIALOG", "click on create new folder")
 
                 val builderAddFolderDialog = AlertDialog.Builder(it)
                 val layoutAddNewFolderDialog = layoutInflater.inflate(R.layout.add_new_folder_dialog, null)

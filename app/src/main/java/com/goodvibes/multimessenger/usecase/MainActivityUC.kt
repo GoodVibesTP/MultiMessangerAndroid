@@ -54,17 +54,22 @@ class MainActivityUC(_mainActivity: MainActivity, _vkMessenger: VK, _tgMessenger
     }
 
     fun getAllFolders(): MutableList<Folder> {
-        val resultFromBD = arrayOf<Folder>(Folder(1, " folder1"),
-                                    Folder(2, " folder2"),
-                                    Folder(3, " folder3"))
 
-        //ну вот так, а что я могу поделать
-        //TODO: надо подумать что будет если пользователь авторизован в вк или тг а в другом месте нет
-        val result = mutableListOf<Folder>(
-                                            Folder(idTGFolder,"Telegram"),
-                                            Folder(idVKFolder,"VK"))
-        result.addAll(resultFromBD)
-        return result
+        var resultId = arrayListOf<Int>()
+        var result = dbUseCase.dbManager.getFolders()
+        for (index in result.indices) {
+            resultId.add(dbUseCase.dbManager.getFolderUIDByName(result[index]))
+        }
+
+        val resultFromBD = mutableListOf<Folder>()
+        for (index in result.indices) {
+            resultFromBD.add(Folder(resultId[index], result[index]))
+        }
+
+        resultFromBD.remove(Folder(0, "AllChats"))
+        resultFromBD.remove(Folder(-3, "VK"))
+        resultFromBD.remove(Folder(-2, "Telegram"))
+        return resultFromBD
     }
 
     fun deleteChat(chat: Chat) {

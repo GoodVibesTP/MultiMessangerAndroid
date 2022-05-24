@@ -8,10 +8,12 @@ import android.view.ActionMode
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.Spinner
 import android.widget.Toast
 import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.transition.Visibility
 import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.Message
 import com.goodvibes.multimessenger.databinding.ActivityChatBinding
@@ -57,16 +59,16 @@ class ChatActivity : AppCompatActivity() {
         listMessage = mutableListOf()
         checkedItems = mutableSetOf()
         onItemCheckStateChanged = {  checkState ->
-            Log.d("MM_LOG", "callOnItemCheckStateChanged")
+            //Log.d("MM_LOG", "callOnItemCheckStateChanged")
             if (lastCheckedItemCount == 0 && checkState.size > 0) {
                 actionMode = startActionMode(ChatActivityActionModeCallback(checkedItems))
-                Log.d("MM_LOG", "startActionMode")
+                //Log.d("MM_LOG", "startActionMode")
             }
             else if (lastCheckedItemCount > 0 && checkState.size == 0) {
                 actionMode?.finish()
-                Log.d("MM_LOG", "finishActionMode")
+                //Log.d("MM_LOG", "finishActionMode")
             }
-            Log.d("MM_LOG", "${actionMode?.menu?.findItem(R.id.select_message_menu_reply)}, ${checkState.size}")
+            //Log.d("MM_LOG", "${actionMode?.menu?.findItem(R.id.select_message_menu_reply)}, ${checkState.size}")
             actionMode?.menu?.findItem(R.id.select_message_menu_reply)?.isVisible =
                 checkState.size == 1
             actionMode?.menu?.findItem(R.id.select_message_menu_edit)?.isVisible =
@@ -82,6 +84,7 @@ class ChatActivity : AppCompatActivity() {
 
         currentChat = intent.extras!!.get("Chat") as Chat
         usecase = ChatActivityUC(this)
+
         getMessageSender = { message, callback ->
             usecase.getMessageSender(message) { user ->
                 GlobalScope.launch(Dispatchers.Main) {
@@ -89,9 +92,14 @@ class ChatActivity : AppCompatActivity() {
                 }
             }
         }
-        toolbar = findViewById(R.id.toolbar)
+        toolbar = findViewById(R.id.toolbar_chat)
         toolbar.title = currentChat.title
+
+//        var tmp = toolbar.findViewById<Spinner>(R.id.sp_option)
+//        tmp.visibility = View.GONE
+        //toolbar.title = currentChat.title
         setSupportActionBar(toolbar)
+        supportActionBar?.setTitle(currentChat.title)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationOnClickListener {
             finish()
@@ -119,10 +127,10 @@ class ChatActivity : AppCompatActivity() {
                     usecase.sendMessage(message) { message_id ->
                         message.id = message_id
                         GlobalScope.launch(Dispatchers.Main) {
-                            Log.d("TG_LOG_MSG_IDS", "send msg ${message.chatId} ${message.id} ${message.text}")
+                            //Log.d("TG_LOG_MSG_IDS", "send msg ${message.chatId} ${message.id} ${message.text}")
                             if (listMessage.lastOrNull { it.id == message_id } == null) {
                                 listMessage.add(0, message)
-                                Log.d("MM_LOG", "send message ${message.id}")
+                                //Log.d("MM_LOG", "send message ${message.id}")
                                 listMessageAdapter.notifyDataSetChanged()
                             }
                             activityChatBinding.chatInputMessage.text.clear()
@@ -132,7 +140,7 @@ class ChatActivity : AppCompatActivity() {
                 else {
                     message.id = currentEditMessageId
                     usecase.editMessage(message) { _ ->
-                        Log.d("TG_LOG_MSG_IDS", "edit msg ${message.chatId} ${message.id} ${message.text}")
+                        //Log.d("TG_LOG_MSG_IDS", "edit msg ${message.chatId} ${message.id} ${message.text}")
                         GlobalScope.launch(Dispatchers.Main) {
                             val position = listMessage.indexOfFirst { it.id == message.id }
                             if (position >= 0) {
