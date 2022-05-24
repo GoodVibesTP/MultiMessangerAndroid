@@ -223,7 +223,7 @@ object Telegram : Messenger {
         )
     }
     override fun getAllChats(count: Int, first_chat: Int, callback: (MutableList<Chat>) -> Unit) {
-        Log.d("MM_LOG", "getAllChats")
+        //Log.d("MM_LOG", "getAllChats")
         GlobalScope.launch {
             if (!haveAuthorization) {
                 delay(1000)

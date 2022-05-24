@@ -26,10 +26,7 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout.OnRefreshListener
 import com.example.testdb3.db.MyDBManager
 import com.goodvibes.multimessenger.databinding.ActivityMainBinding
-import com.goodvibes.multimessenger.datastructure.Chat
-import com.goodvibes.multimessenger.datastructure.Event
-import com.goodvibes.multimessenger.datastructure.Folder
-import com.goodvibes.multimessenger.datastructure.idAllFolder
+import com.goodvibes.multimessenger.datastructure.*
 import com.goodvibes.multimessenger.db.MyDBUseCase
 import com.goodvibes.multimessenger.dialog.SelectFolder
 import com.goodvibes.multimessenger.network.tgmessenger.Telegram
@@ -61,14 +58,18 @@ class MainActivity : AppCompatActivity() {
     lateinit var listChatsAdapter: ListChatsAdapter
     var spinnerInit = false
 
-
+    lateinit var dialog : SelectFolder
     val dbUseCase = MyDBUseCase(myDbManager)
 
 
     private var numberLastChat: Int = 0
+
     private var isLoadingChatVK: Boolean = false
+    private var isLoadingChatTG: Boolean = false
+
     private var numberChatOnPage: Int = 10
     private var currentFolder: Folder = Folder(idAllFolder, "AllChats")
+    lateinit var adapter : AdapterView.OnItemSelectedListener
 
     var mActionMode: ActionMode? = null
     lateinit var callback: ListChatsActionModeCallback
@@ -76,8 +77,6 @@ class MainActivity : AppCompatActivity() {
     var allChats = Collections.synchronizedList(mutableListOf<Chat>())
 
     private var swipeContainer: SwipeRefreshLayout? = null
-
-    var startChats: MutableList<Chat> = mutableListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState);
@@ -112,14 +111,69 @@ class MainActivity : AppCompatActivity() {
         spinner = findViewById(R.id.sp_option)
 
         callback = ListChatsActionModeCallback()
+
+        spinnerAdapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, folders)
+        adapter = CustomItemSelectListener()
+        spinner.adapter = spinnerAdapter
+        spinnerAdapter.notifyDataSetChanged()
+        spinner.onItemSelectedListener = adapter
+        activityMainBinding.listChats.addOnScrollListener(OnScrollListenerChats())
+
     }
+
+    inner class CustomItemSelectListener : AdapterView.OnItemSelectedListener {
+        override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
+            //Log.d("FOLDERS", "OK1")
+            currentFolder.name = folders.get(p2)
+            allChats.clear()
+            listChatsAdapter.notifyDataSetChanged()
+            numberLastChat = 0
+            if (!isLoadingChatVK && !isLoadingChatTG) {
+                useCase.getAllChats(numberChatOnPage, numberLastChat) { chats ->
+                    GlobalScope.launch(Dispatchers.Main) {
+                        val folderUID = myDbManager.getFolderUIDByName(folders.get(p2))
+                        val chatsDB = myDbManager.getChatsByFolder(folderUID)
+
+                        val tempChats: MutableList<Chat> = mutableListOf()
+                        if (currentFolder.name != "AllChats") {
+                            for (item in chatsDB) {
+                                for (chat in chats) {
+                                    if (chat.chatId == item) {
+                                        tempChats.add(chat)
+                                    }
+                                }
+                            }
+                        } else {
+                            tempChats.addAll(chats)
+                        }
+                        numberLastChat += numberChatOnPage
+                        allChats.addAll(tempChats)
+                        allChats.sortWith(ComparatorChats().reversed())
+                        listChatsAdapter.notifyDataSetChanged()
+                        if (chats[0].messenger == Messengers.VK) {
+                            isLoadingChatVK = false
+                        } else {
+                            isLoadingChatTG = false
+                        }
+                    }
+                }
+            }
+        }
+
+
+        override fun onNothingSelected(p0: AdapterView<*>?) {
+            TODO("Not yet implemented")
+        }
+    }
+
+
 
     override fun onResume() {
         super.onResume()
-        allChats.clear()
-        numberLastChat = 0
-        getStartChats()
-        Log.d("FOLDERS", "RESUME")
+        //allChats.clear()
+        //numberLastChat = 0
+        //getStartChats()
+        //Log.d("FOLDERS", "RESUME")
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -168,21 +222,25 @@ class MainActivity : AppCompatActivity() {
     listChatsAdapter = ListChatsAdapter(this@MainActivity, allChats, this@MainActivity);
     activityMainBinding.listChats.setAdapter(listChatsAdapter);
     useCase.startUpdateListener { event ->
-        when(event) {
-            is Event.NewMessage -> {
-                useCase.getChatByID(event.message.messenger, event.message.chatId){
-                    chat: Chat ->
-                    for (i in allChats.indices) {
-                        if (chat.chatId == allChats[i].chatId) {
-                            allChats.removeAt(i)
-                            break
+        GlobalScope.launch(Dispatchers.Main) {
+            when (event) {
+                is Event.NewMessage -> {
+                    useCase.getChatByID(
+                        event.message.messenger,
+                        event.message.chatId
+                    ) { chat: Chat ->
+                        for (i in allChats.indices) {
+                            if (chat.chatId == allChats[i].chatId) {
+                                allChats.removeAt(i)
+                                break
+                            }
                         }
+                        chat.lastMessage = event.message
+                        allChats.add(0, chat)
+                        listChatsAdapter.notifyDataSetChanged()
                     }
-                    chat.lastMessage = event.message
-                    allChats.add(0, chat)
-                    listChatsAdapter.notifyDataSetChanged()
+                    //Log.d("VK_LOG", "new incoming message: ${event.message}")
                 }
-                Log.d("VK_LOG", "new incoming message: ${event.message}")
             }
         }
     }
@@ -192,87 +250,42 @@ class MainActivity : AppCompatActivity() {
     private fun getStartChats() {
         swipeContainer?.setRefreshing(true);
 
-        Log.d("RESUME", "PS")
+        //Log.d("RESUME", "PS")
 
-        Log.d("FOLDERS", "getStartChats")
+        //Log.d("FOLDERS", "getStartChats")
+        if (!isLoadingChatTG && !isLoadingChatVK) {
+            isLoadingChatTG = true
+            isLoadingChatVK = true
+            useCase.getAllChats(numberChatOnPage, 0) { chats ->
+                GlobalScope.launch(Dispatchers.Main) {
+                    //Log.d("FOLDERS", "getStartChats 1")
 
-        useCase.getAllChats(numberChatOnPage, 0) { chats ->
-            GlobalScope.launch(Dispatchers.Main) {
-                Log.d("FOLDERS", "getStartChats 1")
+                    numberLastChat += numberChatOnPage
 
-                numberLastChat = numberChatOnPage
-                // allChats.addAll(chats)
+                    val folderUID = myDbManager.getFolderUIDByName(currentFolder.name)
+                    val chatsDB = myDbManager.getChatsByFolder(folderUID)
 
-                val tempStartChats : MutableList<Chat> = mutableListOf()
-
-                for (currentChat in chats) {
-                    val found = startChats.find{ it == currentChat}
-                    if (found == null) {
-                        tempStartChats.add(currentChat)
-                    }
-                }
-
-                startChats.addAll(tempStartChats)
-
-                Log.d("FOLDERS", "getStartChats 2")
-
-               // allChats.sortWith(ComparatorChats().reversed())
-                // listChatsAdapter.notifyDataSetChanged()
-
-                activityMainBinding.listChats.addOnScrollListener(OnScrollListenerChats())
-
-                for (item in chats) {
-                    dbUseCase.addChatsToPrimaryFolderIfNotExist(item)
-                }
-
-                swipeContainer?.setRefreshing(false);
-
-                spinnerAdapter = ArrayAdapter(this@MainActivity, android.R.layout.simple_spinner_dropdown_item, folders)
-
-                spinner.adapter = spinnerAdapter
-
-                folders.forEachIndexed { index, element ->
-                    if (element == currentFolder.name) {
-                        spinner.setSelection(index)
-                    }
-                }
-
-                if (!spinnerInit) {
-                    spinnerInit = true
-                    spinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
-                        override fun onItemSelected(p0: AdapterView<*>?, p1: View?, p2: Int, p3: Long) {
-                            Log.d("FOLDERS", "OK1")
-
-                            val folderUID = myDbManager.getFolderUIDByName(folders.get(p2))
-                            Log.d("FOLDERS", "$folderUID") // папка вкшная
-
-                            val chatsDB = myDbManager.getChatsByFolder(folderUID)
-
-                            Log.d("FOLDERS", "${chatsDB.size}")
-
-                            val tempChats : MutableList<Chat> = mutableListOf()
-                            Log.d("FOLDERS", "start chats size ${startChats.size}")
-                            for (item in chatsDB) {
-                                for (chat in startChats) {
-                                    if (chat.chatId == item) {
-                                        tempChats.add(chat)
-                                    }
+                    val tempChats: MutableList<Chat> = mutableListOf()
+                    if (currentFolder.name != "AllChats") {
+                        for (item in chatsDB) {
+                            for (chat in chats) {
+                                if (chat.chatId == item) {
+                                    tempChats.add(chat)
                                 }
                             }
-
-                            Log.d("FOLDERS", "${tempChats.size}")
-                            Log.d("FOLDERS", "----------------------------------------------------------------")
-
-                            allChats.clear()
-                            allChats.addAll(tempChats)
-                            allChats.sortWith(ComparatorChats().reversed())
-                            listChatsAdapter.notifyDataSetChanged()
-                            currentFolder.name = folders.get(p2)
                         }
-
-                        override fun onNothingSelected(p0: AdapterView<*>?) {
-                            TODO("Not yet implemented")
-                        }
+                    } else {
+                        tempChats.addAll(chats)
+                    }
+                    numberLastChat += numberChatOnPage
+                    allChats.addAll(tempChats)
+                    allChats.sortWith(ComparatorChats().reversed())
+                    listChatsAdapter.notifyDataSetChanged()
+                    swipeContainer?.setRefreshing(false);
+                    if (chats[0].messenger == Messengers.VK) {
+                        isLoadingChatVK = false
+                    } else {
+                        isLoadingChatTG = false
                     }
                 }
             }
@@ -285,10 +298,14 @@ class MainActivity : AppCompatActivity() {
 
     private fun moveChatToFolder(chat: Chat) : Unit {
         useCase.moveChatToFolder(chat)
+        dialog.dismiss()
+        mActionMode?.finish()
     }
 
     private fun addFolderAndMoveChat(chat: Chat) {
         useCase.addFolder(chat)
+        dialog.dismiss()
+        mActionMode?.finish()
     }
 
     inner class ListChatsActionModeCallback : ActionMode.Callback {
@@ -322,7 +339,7 @@ class MainActivity : AppCompatActivity() {
 
                     val foldersAdapter = ListFoldersAdapter(this@MainActivity, allFolders)
                     val chat = this@MainActivity.listChatsAdapter.chats[this.mClickedViewPosition!!]
-                    val dialog = SelectFolder(allFolders, foldersAdapter, chat!!, ::moveChatToFolder, ::addFolderAndMoveChat)
+                    dialog = SelectFolder(allFolders, foldersAdapter, chat!!, ::moveChatToFolder, ::addFolderAndMoveChat)
                     val manager = supportFragmentManager
                     dialog.show(manager, "Select folder")
                     return true
@@ -351,16 +368,36 @@ class MainActivity : AppCompatActivity() {
            val totalItemCount = layoutManager.itemCount
            val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
 
-           if (!isLoadingChatVK &&  (firstVisibleItemPosition + visibleItemCount >= totalItemCount)) {
+           if (!isLoadingChatVK &&!isLoadingChatTG &&  (firstVisibleItemPosition + visibleItemCount >= totalItemCount)) {
                isLoadingChatVK = true
+               isLoadingChatTG = true
                useCase.getAllChats(numberChatOnPage, numberLastChat) { chats ->
-                   numberLastChat += numberChatOnPage
-                   isLoadingChatVK = false
-                   allChats.addAll(chats)
-                   allChats.sortWith(ComparatorChats().reversed())
-                   listChatsAdapter.notifyDataSetChanged()
-                   for (item in chats) {
-                       dbUseCase.addChatsToPrimaryFolderIfNotExist(item)
+                   GlobalScope.launch(Dispatchers.Main) {
+                       numberLastChat += numberChatOnPage
+                       if (chats[0].messenger == Messengers.VK) {
+                           isLoadingChatVK = false
+                       } else {
+                           isLoadingChatTG = false
+                       }
+                       val folderUID = myDbManager.getFolderUIDByName(currentFolder.name)
+                       val chatsDB = myDbManager.getChatsByFolder(folderUID)
+
+                       val tempChats: MutableList<Chat> = mutableListOf()
+                       if (currentFolder.name != "AllChats") {
+                           for (item in chatsDB) {
+                               for (chat in chats) {
+                                   if (chat.chatId == item) {
+                                       tempChats.add(chat)
+                                   }
+                               }
+                           }
+                       } else {
+                           tempChats.addAll(chats)
+                       }
+                       numberLastChat += numberChatOnPage
+                       allChats.addAll(tempChats)
+                       allChats.sortWith(ComparatorChats().reversed())
+                       listChatsAdapter.notifyDataSetChanged()
                    }
                }
            }

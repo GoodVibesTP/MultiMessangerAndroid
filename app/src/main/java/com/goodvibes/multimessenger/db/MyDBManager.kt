@@ -69,7 +69,7 @@ class MyDBManager(context: Context) {
         }
 
         cursor.close()
-
+        dataList.add(0, "AllChats")
         return dataList
     }
 
