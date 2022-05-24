@@ -40,7 +40,7 @@ class ChatActivity : AppCompatActivity() {
     private var numberMessageOnPage: Int = 50
     private var numberLastMessage: Int = 50
 
-    lateinit var activityChatBinding: ActivityChatBinding;
+    lateinit var activityChatBinding: ActivityChatBinding
     lateinit var usecase: ChatActivityUC
 
     lateinit var progressBarLoadMoreMessages: View
@@ -407,6 +407,9 @@ class ChatActivity : AppCompatActivity() {
         }
 
         override fun onDestroyActionMode(mode: ActionMode?) {
+            checkedItems.clear()
+            lastCheckedItemCount = 0
+            listMessageAdapter.notifyDataSetChanged()
             actionMode = null
         }
 
