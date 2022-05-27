@@ -27,25 +27,25 @@ class AuthorizationActivity : AppCompatActivity() {
         if (useCase.IsLoginVK()) {
             buttonAuthVK.text = "Logout VK"
             buttonAuthVK.setOnClickListener {
-                Toast.makeText(this@AuthorizationActivity, "Logout vk clicked", Toast.LENGTH_SHORT).show()
+                //Toast.makeText(this@AuthorizationActivity, "Logout vk clicked", Toast.LENGTH_SHORT).show()
             }
         } else {
             buttonAuthVK.text = "Auth VK"
             buttonAuthVK.setOnClickListener {
-                Toast.makeText(this@AuthorizationActivity, "AUTH vk clicked", Toast.LENGTH_SHORT).show()
+                //Toast.makeText(this@AuthorizationActivity, "AUTH vk clicked", Toast.LENGTH_SHORT).show()
             }
         }
 
         if (useCase.isLoginTG()) {
             buttonAuthTG.text = "Logout TG"
             buttonAuthTG.setOnClickListener {
-                Toast.makeText(this@AuthorizationActivity, "Logout TG clicked", Toast.LENGTH_SHORT).show()
+                //Toast.makeText(this@AuthorizationActivity, "Logout TG clicked", Toast.LENGTH_SHORT).show()
                 Telegram.logout()
             }
         } else {
             buttonAuthTG.text = "Auth TG"
             buttonAuthTG.setOnClickListener {
-                Toast.makeText(this@AuthorizationActivity, "AUTH TG clicked", Toast.LENGTH_SHORT).show()
+                //Toast.makeText(this@AuthorizationActivity, "AUTH TG clicked", Toast.LENGTH_SHORT).show()
                 val intent = Intent(this, AuthorizationTGActivity::class.java)
                 startActivity(intent)
             }

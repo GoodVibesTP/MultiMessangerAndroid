@@ -151,12 +151,14 @@ class MainActivity : AppCompatActivity() {
                         allChats.addAll(tempChats)
                         allChats.sortWith(ComparatorChats().reversed())
                         listChatsAdapter.notifyDataSetChanged()
-                        if (chats[0].messenger == Messengers.VK) {
-                            isLoadingChatVK = false
-                            numberLastChatVK+=numberChatOnPage
-                        } else {
-                            isLoadingChatTG = false
-                            numberLastChatTG+=numberChatOnPage
+                        if (chats.isNotEmpty()) {
+                            if (chats[0].messenger == Messengers.VK) {
+                                isLoadingChatVK = false
+                                numberLastChatVK += chats.size
+                            } else {
+                                isLoadingChatTG = false
+                                numberLastChatTG += chats.size
+                            }
                         }
                     }
                 }
@@ -200,7 +202,7 @@ class MainActivity : AppCompatActivity() {
         navView.setNavigationItemSelectedListener {
             when(it.itemId) {
                 R.id.nav_home -> {
-                    Toast.makeText(applicationContext, "Clicked home", Toast.LENGTH_LONG).show()
+                    //Toast.makeText(applicationContext, "Clicked home", Toast.LENGTH_LONG).show()
                 }
                 R.id.nav_settings -> {
                     val intent = Intent(this, AuthorizationActivity::class.java)
@@ -284,14 +286,16 @@ class MainActivity : AppCompatActivity() {
                     allChats.sortWith(ComparatorChats().reversed())
                     listChatsAdapter.notifyDataSetChanged()
                     swipeContainer?.setRefreshing(false);
-                    if (chats[0].messenger == Messengers.VK) {
-                        isLoadingChatVK = false
-                        numberLastChatVK += numberChatOnPage
+                    if (chats.isNotEmpty()) {
+                        if (chats[0].messenger == Messengers.VK) {
+                            isLoadingChatVK = false
+                            numberLastChatVK += chats.size
 
-                    } else {
-                        isLoadingChatTG = false
-                        numberLastChatTG += numberChatOnPage
+                        } else {
+                            isLoadingChatTG = false
+                            numberLastChatTG += chats.size
 
+                        }
                     }
                 }
             }
@@ -379,14 +383,16 @@ class MainActivity : AppCompatActivity() {
                isLoadingChatTG = true
                useCase.getAllChats(numberChatOnPage, numberLastChatVK, numberLastChatTG) { chats ->
                    GlobalScope.launch(Dispatchers.Main) {
-                       if (chats[0].messenger == Messengers.VK) {
-                           isLoadingChatVK = false
-                           numberLastChatVK += numberChatOnPage
+                       if (chats.isNotEmpty()) {
+                           if (chats[0].messenger == Messengers.VK) {
+                               isLoadingChatVK = false
+                               numberLastChatVK += chats.size
 
-                       } else {
-                           isLoadingChatTG = false
-                           numberLastChatTG += numberChatOnPage
+                           } else {
+                               isLoadingChatTG = false
+                               numberLastChatTG += chats.size
 
+                           }
                        }
                        val folderUID = myDbManager.getFolderUIDByName(currentFolder.name)
                        val chatsDB = myDbManager.getChatsByFolder(folderUID)

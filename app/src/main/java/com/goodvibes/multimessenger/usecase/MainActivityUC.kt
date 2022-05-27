@@ -74,20 +74,20 @@ class MainActivityUC(_mainActivity: MainActivity, _vkMessenger: VK, _tgMessenger
     }
 
     fun deleteChat(chat: Chat) {
-        Toast.makeText(mainActivity, "Chat for delete " + chat.title, Toast.LENGTH_SHORT).show()
+        // Toast.makeText(mainActivity, "Chat for delete " + chat.title, Toast.LENGTH_SHORT).show()
     }
 
     fun addFolder(chat: Chat) {
         val uniqueID = (RANDOM_START..RANDOM_END).random()
         dbUseCase.dbManager.addFolderToDB( chat.folder.name ,uniqueID)
         dbUseCase.dbManager.addChatToFolder(chat.chatId, uniqueID)
-        Toast.makeText(mainActivity, "Create folder " + chat.folder.name + " for chat " + chat.title, Toast.LENGTH_LONG).show()
+        //Toast.makeText(mainActivity, "Create folder " + chat.folder.name + " for chat " + chat.title, Toast.LENGTH_LONG).show()
     }
 
     fun moveChatToFolder(chat: Chat) {
         val folderUID = dbUseCase.dbManager.getFolderByName(chat.folder.name)
         dbUseCase.dbManager.addChatToFolder(chat.chatId, folderUID)
-        Toast.makeText(mainActivity, chat.title + " to folder " + chat.folder.name, Toast.LENGTH_LONG).show()
+        //Toast.makeText(mainActivity, chat.title + " to folder " + chat.folder.name, Toast.LENGTH_LONG).show()
     }
 
     fun isChatInFolder(chat: Chat, folder: Folder) : Boolean {

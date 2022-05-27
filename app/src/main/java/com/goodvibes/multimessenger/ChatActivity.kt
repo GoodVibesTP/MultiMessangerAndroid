@@ -233,11 +233,11 @@ class ChatActivity : AppCompatActivity() {
                 is Event.ReadIngoingUntil -> {
                     if (currentChat.chatId == event.chat_id) {
                         GlobalScope.launch(Dispatchers.Main) {
-                            Toast.makeText(
-                                this@ChatActivity,
-                                "ingoing messages marked as read",
-                                Toast.LENGTH_LONG
-                            ).show()
+//                            Toast.makeText(
+//                                this@ChatActivity,
+//                                "ingoing messages marked as read",
+//                                Toast.LENGTH_LONG
+//                            ).show()
                             currentChat.inRead = event.message_id
                             for (message in listMessage) {
                                 if (!message.isMyMessage && message.id <= event.message_id) {
@@ -255,11 +255,11 @@ class ChatActivity : AppCompatActivity() {
                 is Event.ReadOutgoingUntil -> {
                     if (currentChat.chatId == event.chat_id) {
                         GlobalScope.launch(Dispatchers.Main) {
-                            Toast.makeText(
-                                this@ChatActivity,
-                                "outgoing messages marked as read",
-                                Toast.LENGTH_LONG
-                            ).show()
+//                            Toast.makeText(
+//                                this@ChatActivity,
+//                                "outgoing messages marked as read",
+//                                Toast.LENGTH_LONG
+//                            ).show()
                             currentChat.inRead = event.message_id
                             for (message in listMessage) {
                                 if (message.isMyMessage && message.id <= event.message_id) {
@@ -345,11 +345,11 @@ class ChatActivity : AppCompatActivity() {
             ) {
                 if (it == 1) {
                     GlobalScope.launch(Dispatchers.Main) {
-                        Toast.makeText(
-                            this@ChatActivity,
-                            "messages marked as read",
-                            Toast.LENGTH_LONG
-                        ).show()
+//                        Toast.makeText(
+//                            this@ChatActivity,
+//                            "messages marked as read",
+//                            Toast.LENGTH_LONG
+//                        ).show()
                         currentChat.inRead = message_id
                         for (message in listMessage) {
                             if (!message.isMyMessage && message.id <= message_id) {
