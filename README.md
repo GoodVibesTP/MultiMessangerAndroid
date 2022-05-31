@@ -7,7 +7,6 @@
 - [Евгений Рудых](https://github.com/Lyalyashechka)
 - [Сергей Куст](https://github.com/BUSH1997)
 - [Дмитрий Касиянчук](https://github.com/dmitryk1210)
-- [Александр Орлецкий](https://github.com/Trollbump)
 
 
 
