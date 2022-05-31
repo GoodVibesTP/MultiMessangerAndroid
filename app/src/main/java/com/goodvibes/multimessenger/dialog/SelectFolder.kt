@@ -17,8 +17,10 @@ import com.goodvibes.multimessenger.datastructure.idNewFolder
 import com.goodvibes.multimessenger.util.ListFoldersAdapter
 
 class SelectFolder(
-    _folders: MutableList<Folder>, _listFoldersAdapter: ListFoldersAdapter, chat: Chat,
-    _callbackAfterClickFolder: (chat: Chat) ->Unit, _callbackAddFolder: (chat: Chat)->Unit
+    _folders: MutableList<Folder>,
+    _listFoldersAdapter: ListFoldersAdapter, chat: Chat,
+    _callbackAfterClickFolder: (chat: Chat) -> Unit,
+    _callbackAddFolder: (chat: Chat)->Unit
 ) : DialogFragment() {
     private val listFoldersAdapter  = _listFoldersAdapter
     val folders = _folders

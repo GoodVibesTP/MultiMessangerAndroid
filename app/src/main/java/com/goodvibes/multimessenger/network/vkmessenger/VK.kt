@@ -34,12 +34,12 @@ object VK : Messenger {
         }
     }
 
-    private var haveAuthorization = true
+    private var haveAuthorization = false // true if there is a token
     private var currentUserId = 0L
 
     private val vkClient = OriginalVKClient
 
-    private var token = "token"
+    private var token = "your_token" // placeholder for token
 
     private val permissions = arrayListOf<VKScope>()
 
