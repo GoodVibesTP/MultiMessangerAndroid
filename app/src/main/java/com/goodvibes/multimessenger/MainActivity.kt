@@ -332,6 +332,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun addFolderAndMoveChat(chat: Chat) {
         useCase.addFolder(chat)
+        folders = myDbManager.getFolders()
+        spinnerAdapter.clear()
+        spinnerAdapter.addAll(folders)
+        spinnerAdapter.notifyDataSetChanged()
         dialog.dismiss()
         mActionMode?.finish()
     }

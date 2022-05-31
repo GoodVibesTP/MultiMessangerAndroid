@@ -14,6 +14,9 @@ import com.goodvibes.multimessenger.datastructure.Chat
 import com.goodvibes.multimessenger.datastructure.Messengers
 import com.goodvibes.multimessenger.network.tgmessenger.Telegram
 import com.squareup.picasso.Picasso
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 import org.drinkless.td.libcore.telegram.Client
 import org.drinkless.td.libcore.telegram.TdApi
 import java.io.File
@@ -84,13 +87,17 @@ class ListChatsAdapter(
             if (chat.imgUri != null) {
                 Picasso.get().load(chat.imgUri).into(holder.imageViewChatAva)
             } else {
+                // holder.imageViewChatAva.setImageResource(R.drawable.noava)
                 if (chat.tgAva != null) {
                     Telegram.downloadFile(chat.tgAva!!, object : Client.ResultHandler {
                         override fun onResult(`object`: TdApi.Object?) {
                             if (`object` is TdApi.File) {
                                 val bitmaps: MutableList<Bitmap> = ArrayList()
                                 val bitmap = getBitmap(`object`.local.path)
-                                holder.imageViewChatAva.setImageBitmap(bitmap)
+                                GlobalScope.launch(Dispatchers.Main) {
+                                    holder.imageViewChatAva.setImageBitmap(bitmap)
+                                }
+
                             }
                         }
                     })
