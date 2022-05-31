@@ -1,13 +1,14 @@
 package com.goodvibes.multimessenger.network.tgmessenger
 
 import android.annotation.SuppressLint
+import android.graphics.Bitmap
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.goodvibes.multimessenger.R
 import com.goodvibes.multimessenger.datastructure.*
 import com.goodvibes.multimessenger.network.Messenger
-import com.goodvibes.multimessenger.network.vkmessenger.VK
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.drinkless.td.libcore.telegram.Client
 import org.drinkless.td.libcore.telegram.TdApi
@@ -57,27 +58,77 @@ object Telegram : Messenger {
 
     private var registeredForUpdates = false
     private var onEventsCallback: (Event) -> Unit = { }
+    private var onAuthorizationStateChangedCallback: (Boolean) -> Unit = { }
+
+    fun setOnAuthorizationStateChangedCallback(callback: (Boolean) -> Unit) {
+        onAuthorizationStateChangedCallback = callback
+    }
+    fun clearOnAuthorizationStateChangedCallback() {
+        onAuthorizationStateChangedCallback = { }
+    }
 
     private lateinit var client: Client
 
     private val contacts = mutableMapOf<Long,TdApi.User>()
+    private val mapTGUsers = mutableMapOf<Long, User>()
     private val chats = mutableMapOf<Long, TdApi.Chat>()
     private var chatsLoaded = false
 
     @SuppressLint("SimpleDateFormat")
-    private val dateFormat = SimpleDateFormat("dd/M/yyyy HH:mm:ss", Locale("ru", "ru"))
+    private val dateFormat = SimpleDateFormat("dd.MM.yyyy HH:mm:ss", Locale("ru", "ru"))
+
+    class Image(
+        private val file: TdApi.File
+    ) {
+        var isLoaded = false
+        private var path: String? = null
+
+        fun getPath(callback: (String?) -> Unit) {
+            if (isLoaded) {
+                callback(path)
+            }
+            else {
+                downloadFileToPath(file) {
+                    path = it
+                    callback(path)
+                }
+            }
+        }
+    }
+
+    fun downloadFileToPath(file: TdApi.File, callback: (String?) -> Unit) {
+        client.send(
+            TdApi.DownloadFile(
+                file.id, 1,0,0,true
+            ),
+            DownloadFileResultHandler(callback)
+        )
+    }
 
     private fun toDefaultChat(chat: TdApi.Chat): Chat {
+        val lastMessage = if(chat.lastMessage == null) null else {
+            toDefaultMessage(chat.lastMessage!!)
+        }
+        if (lastMessage != null) {
+            lastMessage.read = if (lastMessage.isMyMessage) {
+                lastMessage.id <= chat.lastReadOutboxMessageId
+            }
+            else {
+                lastMessage.id <= chat.lastReadInboxMessageId
+            }
+        }
         return Chat(
             chatId = chat.id,
-            img = R.drawable.kotik,
+            img = R.mipmap.tg_icon,
             imgUri = null,
             title = chat.title,
             chatType = ChatType.CHAT,
-            lastMessage =
-                if (chat.lastMessage == null) null
-                else toDefaultMessage(chat.lastMessage!!),
-            messenger = Messengers.TELEGRAM
+            lastMessage = lastMessage,
+            inRead = chat.lastReadInboxMessageId,
+            outRead = chat.lastReadOutboxMessageId,
+            messenger = Messengers.TELEGRAM,
+            unreadMessage = chat.unreadCount,
+            tgAva = chat.photo?.small
         )
     }
 
@@ -100,6 +151,9 @@ object Telegram : Messenger {
                 TdApi.MessageText.CONSTRUCTOR -> {
                     (message.content as TdApi.MessageText).text.text
                 }
+                TdApi.MessagePhoto.CONSTRUCTOR -> {
+                    "Фотография: "
+                }
                 else -> {
                     "Текст сообщения не поддерживается данной версией приложения"
                 }
@@ -114,8 +168,38 @@ object Telegram : Messenger {
             },
             fwdMessages = null,
             replyTo = null,
-            messenger = Messengers.TELEGRAM
+            messenger = Messengers.TELEGRAM,
+            attachments = when(message.content.constructor) {
+                TdApi.MessagePhoto.CONSTRUCTOR -> {
+                    val tdApiPhotoSize =
+                        (message.content as TdApi.MessagePhoto).photo.sizes.maxByOrNull { it.width }
+                    listOf(
+                        MessageAttachment.TelegramImage(
+                            image = Image(tdApiPhotoSize!!.photo),
+                            width = tdApiPhotoSize.width,
+                            height = tdApiPhotoSize.height
+                        )
+                    )
+                }
+                else -> null
+            }
         )
+    }
+
+    private fun toDefaultUser(tgUser: TdApi.User) : User {
+        return User(
+            userId = tgUser.id,
+            firstName = tgUser.firstName,
+            lastName = tgUser.lastName,
+            imgUri = ""
+        )
+    }
+
+    override fun getUser(user_id: Long, callback: (User) -> Unit) {
+        val tgUser = mapTGUsers[user_id]
+        if (tgUser != null) {
+            callback(tgUser)
+        }
     }
 
     fun sendAuthPhone(phone: String) {
@@ -142,10 +226,15 @@ object Telegram : Messenger {
     }
 
     fun logout() {
+        haveAuthorization = false
         client.send(
             TdApi.LogOut(),
             AuthorizationRequestHandler()
         )
+        GlobalScope.launch {
+            delay(1000)
+            onAuthorizationStateChangedCallback(haveAuthorization)
+        }
     }
 
     override fun isAuthorized(): Boolean {
@@ -155,74 +244,119 @@ object Telegram : Messenger {
     override fun getUserId(): Long {
         return currentUserId
     }
-
-    override fun getAllChats(count: Int, first_chat: Int, callback: (MutableList<Chat>) -> Unit) {
-        Log.d("MM_LOG", "getAllChats")
-        while(!haveAuthorization) {
-        }
+    fun downloadFile(file: TdApi.File, callback: Client.ResultHandler) {
         client.send(
-            TdApi.GetChats(null, count + first_chat)
-        ) { tdObject ->
-            when (tdObject.constructor) {
-                TdApi.Chats.CONSTRUCTOR -> {
-                    val chatIds = (tdObject as TdApi.Chats).chatIds
-                    val chatArray = arrayListOf<Chat>()
-                    val limit = min(first_chat + count, chatIds.size)
-                    chatArray.ensureCapacity(limit)
-                    for (i in first_chat..limit-1) {
-                        val telegramNextChat = chats[chatIds[i]]
-                        if (telegramNextChat != null) {
-                            chatArray.add(toDefaultChat(telegramNextChat))
+            TdApi.DownloadFile(
+                file.id, 1,0,0,true
+            ),
+            callback
+        )
+    }
+    override fun getAllChats(count: Int, first_chat: Int, callback: (MutableList<Chat>) -> Unit) {
+        //Log.d("MM_LOG", "getAllChats")
+        GlobalScope.launch {
+            if (!haveAuthorization) {
+                delay(100)
+            }
+            if (haveAuthorization) {
+                client.send(
+                    TdApi.GetChats(null, count + first_chat)
+                ) { tdObject ->
+                    when (tdObject.constructor) {
+                        TdApi.Chats.CONSTRUCTOR -> {
+                            val chatIds = (tdObject as TdApi.Chats).chatIds
+                            val chatArray = arrayListOf<Chat>()
+                            val limit = min(first_chat + count, chatIds.size)
+                            chatArray.ensureCapacity(limit)
+                            for (i in first_chat until limit) {
+                                val telegramNextChat = chats[chatIds[i]]
+                                if (telegramNextChat != null) {
+                                    chatArray.add(toDefaultChat(telegramNextChat))
+                                }
+                            }
+                            callback(chatArray)
                         }
+                        else -> Log.d(LOG_TAG, "Receive wrong response from TDLib: $tdObject")
                     }
-                    callback(chatArray)
                 }
-                else -> Log.d(LOG_TAG, "Receive wrong response from TDLib: $tdObject")
             }
         }
     }
 
-
     override fun getMessagesFromChat(
         chat_id: Long,
         count: Int,
-        first_msg: Int,
+        offset: Int,
+        first_msg_id: Long,
         callback: (MutableList<Message>) -> Unit
     ) {
-        while (!haveAuthorization) {
+        Log.d("TG_LOG", "$offset $count")
+        if (haveAuthorization) {
+            Log.d("MM_LOG", "getMessagesFromChat")
+            val messageList: MutableList<Message> = mutableListOf()
+
+            getMessagesFromChat(
+                chat_id,
+                count,
+                first_msg_id,
+                messageList,
+                callback
+            )
         }
-        Log.d("MM_LOG", "getMessagesFromChat")
+    }
+
+    private fun getMessagesFromChat(
+        chat_id: Long,
+        count: Int,
+        first_msg_id: Long,
+        messageList: MutableList<Message>,
+        callback: (MutableList<Message>) -> Unit
+    ) {
+        Log.d("MM_LOG", "getMessagesFromChat $count")
         client.send(
             TdApi.GetChatHistory(
                 chat_id,
+                first_msg_id,
                 0,
-                0,
-                100,
+                count,
                 false
             ),
             CallbackHandler<MutableList<Message>> {
-                client.send(
-                    TdApi.GetChatHistory(
+                messageList.addAll(it)
+
+                if (count - it.size > 0 && it.size != 0) {
+                    getMessagesFromChat(
                         chat_id,
-                        0,
-                        0,
-                        100,
-                        true
-                    ),
-                    CallbackHandler(callback)
-                )
+                        count - it.size,
+                        messageList.last().id,
+                        messageList,
+                        callback
+                    )
+                }
+                else {
+                    val chat = chats[chat_id]
+                    for (message in messageList) {
+                        message.read = if (message.isMyMessage) {
+                            message.id <= chat!!.lastReadOutboxMessageId
+                        }
+                        else {
+                            message.id <= chat!!.lastReadInboxMessageId
+                        }
+                    }
+                    callback(messageList)
+                }
             }
         )
     }
 
     override fun sendMessage(
-        user_id: Long,
+        chat_id: Long,
         text: String,
         callback: (Long) -> Unit
     ) {
         client.send(
             TdApi.SendMessage(
-                user_id,
+                chat_id,
                 0,
                 0,
                 null,
@@ -237,13 +371,65 @@ object Telegram : Messenger {
         )
     }
 
+    override fun editMessage(
+        chat_id: Long,
+        message_id: Long,
+        text: String,
+        callback: (Long) -> Unit
+    ) {
+        client.send(
+            TdApi.EditMessageText(
+                chat_id,
+                message_id,
+                null,
+                TdApi.InputMessageText(
+                    TdApi.FormattedText(text, null),
+                    false,
+                    false
+                )
+            ),
+            SendMessageResultHandler(callback)
+        )
+    }
+
+    override fun deleteMessages(
+        chat_id: Long,
+        message_ids: List<Long>,
+        callback: (List<Int>) -> Unit
+    ) {
+        client.send(
+            TdApi.DeleteMessages(
+                chat_id,
+                message_ids.toLongArray(),
+                false
+            ),
+            DefaultHandler()
+        )
+    }
+
+    override fun markAsRead(
+        peer_id: Long,
+        message_ids: List<Long>?,
+        start_message_id: Long?,
+        mark_conversation_as_read: Boolean,
+        callback: (Int) -> Unit
+    ) {
+        client.send(
+            TdApi.ViewMessages(
+                peer_id,
+                0,
+                message_ids?.toLongArray(),
+                true
+            ),
+            MarkAsReadResultHandler(callback)
+        )
+    }
+
     override fun getChatById(
         chat_id: Long,
         callback: (Chat) -> Unit
     ) {
-        GlobalScope.launch {
-            while (!haveAuthorization) {
-            }
+        if (haveAuthorization) {
             Log.d(LOG_TAG, "getChatById, ${chats[chat_id]}")
             Log.d(LOG_TAG, chats.toString())
             if (chats[chat_id] != null) {
@@ -295,7 +481,7 @@ object Telegram : Messenger {
             TdApi.AuthorizationStateWaitPhoneNumber.CONSTRUCTOR -> {
                 Log.d(LOG_TAG,
                     "onAuthorizationStateUpdated -> AuthorizationStateWaitPhoneNumber")
-//                val phoneNumber: String = "+79777569732"
+//                val phoneNumber: String = "+7your_phone_number"
 //                client.send(
 //                    TdApi.SetAuthenticationPhoneNumber(
 //                        phoneNumber,
@@ -350,6 +536,10 @@ object Telegram : Messenger {
                 } finally {
                     authorizationLock.unlock()
                 }
+                GlobalScope.launch {
+                    delay(100)
+                    onAuthorizationStateChangedCallback(haveAuthorization)
+                }
                 client.send(
                     TdApi.GetMe(),
                     GetMeResultHandler {
@@ -360,10 +550,18 @@ object Telegram : Messenger {
             TdApi.AuthorizationStateLoggingOut.CONSTRUCTOR -> {
                 Log.d(LOG_TAG, "onAuthorizationStateUpdated -> AuthorizationStateLoggingOut")
                 haveAuthorization = false
+                GlobalScope.launch {
+                    delay(100)
+                    onAuthorizationStateChangedCallback(haveAuthorization)
+                }
             }
             TdApi.AuthorizationStateClosing.CONSTRUCTOR -> {
                 Log.d(LOG_TAG, "onAuthorizationStateUpdated -> AuthorizationStateClosing")
                 haveAuthorization = false
+                GlobalScope.launch {
+                    delay(100)
+                    onAuthorizationStateChangedCallback(haveAuthorization)
+                }
             }
             TdApi.AuthorizationStateClosed.CONSTRUCTOR -> {
                 Log.d(LOG_TAG, "onAuthorizationStateUpdated -> AuthorizationStateClosed")
@@ -428,6 +626,33 @@ object Telegram : Messenger {
         }
     }
 
+    private class DownloadFileResultHandler(
+        val callback: (String?) -> Unit
+    ) : Client.ResultHandler {
+        override fun onResult(tdObject: TdApi.Object) {
+            if (tdObject is TdApi.File) {
+                callback(tdObject.local.path)
+            }
+        }
+    }
+
+    private class MarkAsReadResultHandler(
+        val callback: (Int) -> Unit
+    ) : Client.ResultHandler {
+        override fun onResult(tdObject: TdApi.Object) {
+            when (tdObject.constructor) {
+                TdApi.Error.CONSTRUCTOR -> {
+                    Log.d("MM_LOG", "Receive an error: $tdObject")
+                }
+                TdApi.Ok.CONSTRUCTOR -> {
+                    Log.d("MM_LOG", "Receive OK: $tdObject")
+                    callback(1)
+                }
+                else -> Log.d("MM_LOG", "Receive wrong response from TDLib: $tdObject")
+            }
+        }
+    }
+
     private class GetMeResultHandler(
         val callback: (TdApi.User) -> Unit
     ) : Client.ResultHandler {
@@ -450,6 +675,7 @@ object Telegram : Messenger {
                     if (user.isContact) {
                         contacts[user.id] = user
                     }
+                    mapTGUsers[user.id] = toDefaultUser(user)
                 }
                 TdApi.UpdateUserStatus.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateUserStatus")
@@ -487,7 +713,6 @@ object Telegram : Messenger {
                 }
                 TdApi.UpdateChatLastMessage.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateChatLastMessage")
-
                     val updateChat = tdObject as TdApi.UpdateChatLastMessage
                     val chat = chats[updateChat.chatId]
                     if (chat != null) {
@@ -501,9 +726,23 @@ object Telegram : Messenger {
                 }
                 TdApi.UpdateChatReadInbox.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateChatReadInbox")
+                    val updateChatReadInbox = tdObject as TdApi.UpdateChatReadInbox
+                    onEventsCallback(Event.ReadIngoingUntil(
+                        chat_id = updateChatReadInbox.chatId,
+                        message_id = updateChatReadInbox.lastReadInboxMessageId,
+                        messenger = Messengers.TELEGRAM
+                        )
+                    )
                 }
                 TdApi.UpdateChatReadOutbox.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateChatReadOutbox")
+                    val updateChatReadOutbox = tdObject as TdApi.UpdateChatReadOutbox
+                    onEventsCallback(Event.ReadIngoingUntil(
+                        chat_id = updateChatReadOutbox.chatId,
+                        message_id = updateChatReadOutbox.lastReadOutboxMessageId,
+                        messenger = Messengers.TELEGRAM
+                        )
+                    )
                 }
                 TdApi.UpdateChatUnreadMentionCount.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateChatUnreadMentionCount")
@@ -513,13 +752,32 @@ object Telegram : Messenger {
                 }
                 TdApi.UpdateMessageContent.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateMessageContent")
+                    val updateMessageContent = tdObject as TdApi.UpdateMessageContent
+                    if (registeredForUpdates) {
+                        onEventsCallback(Event.EditMessageContent(
+                            chat_id = updateMessageContent.chatId,
+                            message_id = updateMessageContent.messageId,
+                            text = when(updateMessageContent.newContent.constructor) {
+                                TdApi.MessageText.CONSTRUCTOR -> {
+                                    (updateMessageContent.newContent as TdApi.MessageText).text.text
+                                }
+                                else -> {
+                                    "Текст сообщения не поддерживается данной версией приложения"
+                                }
+                            },
+                            messenger = Messengers.TELEGRAM
+                            )
+                        )
+                    }
                 }
                 TdApi.UpdateNewMessage.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateNewMessage, $tdObject")
                     val updateNewMessage = tdObject as TdApi.UpdateNewMessage
                     if (registeredForUpdates) {
+                        val newMessage = toDefaultMessage(updateNewMessage.message)
+                        newMessage.read = false
                         onEventsCallback(Event.NewMessage(
-                            message = toDefaultMessage(updateNewMessage.message),
+                            message = newMessage,
                             direction = Event.NewMessage.Direction.INGOING
                             )
                         )
@@ -533,6 +791,15 @@ object Telegram : Messenger {
                 }
                 TdApi.UpdateDeleteMessages.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateDeleteMessages")
+                    val updateDeleteMessages = tdObject as TdApi.UpdateDeleteMessages
+                    for (message_id in updateDeleteMessages.messageIds) {
+                        onEventsCallback(Event.DeleteMessage(
+                            chat_id = updateDeleteMessages.chatId,
+                            message_id = message_id,
+                            messenger = Messengers.TELEGRAM
+                            )
+                        )
+                    }
                 }
                 TdApi.UpdateChatReplyMarkup.CONSTRUCTOR -> {
                     Log.d(LOG_TAG, "UpdateHandler -> UpdateChatReplyMarkup")

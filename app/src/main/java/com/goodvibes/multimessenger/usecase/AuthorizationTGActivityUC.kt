@@ -11,12 +11,12 @@ class AuthorizationTGActivityUC(_authorizationTGActivity: AuthorizationTGActivit
     val tg = _tgMessenger
 
     fun SendAuthCodeToPhone(number: String) {
-        Toast.makeText(authorizationTGActivity, number, Toast.LENGTH_LONG).show()
+        //Toast.makeText(authorizationTGActivity, number, Toast.LENGTH_LONG).show()
         tg.sendAuthPhone(number)
     }
 
     fun CheckAuthCode (code: String) {
-        Toast.makeText(authorizationTGActivity, code, Toast.LENGTH_LONG).show()
+        //Toast.makeText(authorizationTGActivity, code, Toast.LENGTH_LONG).show()
         tg.sendAuthCode(code)
     }
 }

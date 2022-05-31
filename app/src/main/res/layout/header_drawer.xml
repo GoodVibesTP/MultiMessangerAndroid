@@ -5,11 +5,12 @@
         android:layout_height="wrap_content"
         >
 
-        <ImageView
+        <de.hdodenhof.circleimageview.CircleImageView
                 android:id="@+id/drawer_header_ava"
-                android:layout_width="60dp"
-                android:layout_height="60dp"
-                android:src="@drawable/kotik"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:src="@mipmap/tg_icon"
+                android:layout_margin="10dp"
             />
 
         <TextView
@@ -19,16 +20,10 @@
                 android:paddingTop="8dp"
                 android:textSize="20dp"
                 android:text="Sergey Kust"
+                android:layout_marginLeft="3dp"
                 android:textStyle="bold"
                 />
 
-        <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textSize="16dp"
-                android:text="Sergey.Kust@gmail.com"
-                android:textStyle="bold"
-            />
 
         <View
                 android:layout_width="match_parent"

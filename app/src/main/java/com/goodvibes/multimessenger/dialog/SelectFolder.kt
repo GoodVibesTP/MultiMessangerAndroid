@@ -17,8 +17,10 @@ import com.goodvibes.multimessenger.datastructure.idNewFolder
 import com.goodvibes.multimessenger.util.ListFoldersAdapter
 
 class SelectFolder(
-    _folders: MutableList<Folder>, _listFoldersAdapter: ListFoldersAdapter, chat: Chat,
-    _callbackAfterClickFolder: (chat: Chat) ->Unit, _callbackAddFolder: (chat: Chat)->Unit
+    _folders: MutableList<Folder>,
+    _listFoldersAdapter: ListFoldersAdapter, chat: Chat,
+    _callbackAfterClickFolder: (chat: Chat) -> Unit,
+    _callbackAddFolder: (chat: Chat)->Unit
 ) : DialogFragment() {
     private val listFoldersAdapter  = _listFoldersAdapter
     val folders = _folders
@@ -35,7 +37,7 @@ class SelectFolder(
 
             val addNewFolderView = rowList.findViewById<RelativeLayout>(R.id.folders_all_add_relative_layout)
             addNewFolderView.setOnClickListener(View.OnClickListener { view ->
-                Log.d("FOLDER DIALOG", "click on create new folder")
+                //Log.d("FOLDER DIALOG", "click on create new folder")
 
                 val builderAddFolderDialog = AlertDialog.Builder(it)
                 val layoutAddNewFolderDialog = layoutInflater.inflate(R.layout.add_new_folder_dialog, null)

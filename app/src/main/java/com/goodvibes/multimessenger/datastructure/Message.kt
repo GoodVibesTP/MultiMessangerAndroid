@@ -18,5 +18,7 @@ data class Message(
     var messenger: Messengers? = null,
     var isMyMessage: Boolean = false,
     var date: Int = dateMessageDefault,
-    var time: String = "21:00"
+    var time: String = "21:00",
+    var read: Boolean = true,
+    var attachments: List<MessageAttachment>?
 ) : Serializable
