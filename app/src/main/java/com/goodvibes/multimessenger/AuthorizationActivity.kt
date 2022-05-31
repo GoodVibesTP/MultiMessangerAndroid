@@ -3,11 +3,15 @@ package com.goodvibes.multimessenger
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import android.widget.Button
 import android.widget.Toast
 import com.goodvibes.multimessenger.network.tgmessenger.Telegram
 import com.goodvibes.multimessenger.network.vkmessenger.VK
 import com.goodvibes.multimessenger.usecase.AuthorizationActivityUC
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
 
 class AuthorizationActivity : AppCompatActivity() {
     lateinit var useCase: AuthorizationActivityUC
@@ -15,6 +19,12 @@ class AuthorizationActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_authorization)
+        Telegram.setOnAuthorizationStateChangedCallback {
+            Log.d("MM_LOG", "Telegram.onAuthorizationStateChangedCallback")
+            GlobalScope.launch(Dispatchers.Main) {
+                initBtn()
+            }
+        }
 
         useCase = AuthorizationActivityUC(VK, Telegram)
         initBtn()
@@ -48,6 +58,7 @@ class AuthorizationActivity : AppCompatActivity() {
                 //Toast.makeText(this@AuthorizationActivity, "AUTH TG clicked", Toast.LENGTH_SHORT).show()
                 val intent = Intent(this, AuthorizationTGActivity::class.java)
                 startActivity(intent)
+
             }
         }
     }

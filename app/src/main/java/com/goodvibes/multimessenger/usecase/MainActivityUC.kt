@@ -21,13 +21,17 @@ class MainActivityUC(_mainActivity: MainActivity, _vkMessenger: VK, _tgMessenger
         count: Int,
         first_msg_vk: Int,
         first_msg_tg: Int,
-        callback: (MutableList<Chat>) -> Unit
+        callback: (MutableList<Chat>, messenger: Messengers) -> Unit
     ) {
         if (vk.isAuthorized()) {
-            vk.getAllChats(count, first_msg_vk, callback = callback)
+            vk.getAllChats(count, first_msg_vk) {
+                callback(it, Messengers.VK)
+            }
         }
         if (tg.isAuthorized()) {
-            tg.getAllChats(count, first_msg_tg, callback = callback)
+            tg.getAllChats(count, first_msg_tg) {
+                callback(it, Messengers.TELEGRAM)
+            }
         }
     }
 

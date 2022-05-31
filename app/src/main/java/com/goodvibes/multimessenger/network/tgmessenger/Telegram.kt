@@ -58,6 +58,14 @@ object Telegram : Messenger {
 
     private var registeredForUpdates = false
     private var onEventsCallback: (Event) -> Unit = { }
+    private var onAuthorizationStateChangedCallback: (Boolean) -> Unit = { }
+
+    fun setOnAuthorizationStateChangedCallback(callback: (Boolean) -> Unit) {
+        onAuthorizationStateChangedCallback = callback
+    }
+    fun clearOnAuthorizationStateChangedCallback() {
+        onAuthorizationStateChangedCallback = { }
+    }
 
     private lateinit var client: Client
 
@@ -223,6 +231,10 @@ object Telegram : Messenger {
             TdApi.LogOut(),
             AuthorizationRequestHandler()
         )
+        GlobalScope.launch {
+            delay(1000)
+            onAuthorizationStateChangedCallback(haveAuthorization)
+        }
     }
 
     override fun isAuthorized(): Boolean {
@@ -244,7 +256,7 @@ object Telegram : Messenger {
         //Log.d("MM_LOG", "getAllChats")
         GlobalScope.launch {
             if (!haveAuthorization) {
-                delay(1000)
+                delay(100)
             }
             if (haveAuthorization) {
                 client.send(
@@ -524,6 +536,10 @@ object Telegram : Messenger {
                 } finally {
                     authorizationLock.unlock()
                 }
+                GlobalScope.launch {
+                    delay(100)
+                    onAuthorizationStateChangedCallback(haveAuthorization)
+                }
                 client.send(
                     TdApi.GetMe(),
                     GetMeResultHandler {
@@ -534,10 +550,18 @@ object Telegram : Messenger {
             TdApi.AuthorizationStateLoggingOut.CONSTRUCTOR -> {
                 Log.d(LOG_TAG, "onAuthorizationStateUpdated -> AuthorizationStateLoggingOut")
                 haveAuthorization = false
+                GlobalScope.launch {
+                    delay(100)
+                    onAuthorizationStateChangedCallback(haveAuthorization)
+                }
             }
             TdApi.AuthorizationStateClosing.CONSTRUCTOR -> {
                 Log.d(LOG_TAG, "onAuthorizationStateUpdated -> AuthorizationStateClosing")
                 haveAuthorization = false
+                GlobalScope.launch {
+                    delay(100)
+                    onAuthorizationStateChangedCallback(haveAuthorization)
+                }
             }
             TdApi.AuthorizationStateClosed.CONSTRUCTOR -> {
                 Log.d(LOG_TAG, "onAuthorizationStateUpdated -> AuthorizationStateClosed")
