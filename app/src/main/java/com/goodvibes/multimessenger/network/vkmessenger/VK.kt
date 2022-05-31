@@ -34,7 +34,7 @@ object VK : Messenger {
         }
     }
 
-    private var haveAuthorization = true
+    private var haveAuthorization = false
     private var currentUserId = 0L
 
     private val vkClient = OriginalVKClient

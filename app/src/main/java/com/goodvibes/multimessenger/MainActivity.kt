@@ -100,11 +100,13 @@ class MainActivity : AppCompatActivity() {
         initChatsAllAdapter()
 
         useCase.getCurrentUserVK { user ->
-            var viewName = findViewById<TextView>(R.id.drawer_header_username)
-            viewName.text = user.firstName + " " + user.lastName
+            GlobalScope.launch(Dispatchers.Main) {
+                val viewName = findViewById<TextView>(R.id.drawer_header_username)
+                viewName.text = user.firstName + " " + user.lastName
 
-            var userAva = findViewById<ImageView>(R.id.drawer_header_ava)
-            Picasso.get().load(user.imgUri).into(userAva)
+                val userAva = findViewById<ImageView>(R.id.drawer_header_ava)
+                Picasso.get().load(user.imgUri).into(userAva)
+            }
         }
 
         folders = myDbManager.getFolders()
@@ -175,10 +177,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        //allChats.clear()
-        //numberLastChat = 0
-        //getStartChats()
-        //Log.d("FOLDERS", "RESUME")
+//        allChats.clear()
+//        numberLastChat = 0
+//        getStartChats()
+//        Log.d("FOLDERS", "RESUME")
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -260,12 +262,11 @@ class MainActivity : AppCompatActivity() {
 
         //Log.d("FOLDERS", "getStartChats")
         if (!isLoadingChatTG && !isLoadingChatVK) {
-            isLoadingChatTG = true
-            isLoadingChatVK = true
+            isLoadingChatTG = tg.isAuthorized()
+            isLoadingChatVK = vk.isAuthorized()
             useCase.getAllChats(numberChatOnPage, 0, 0) { chats ->
                 GlobalScope.launch(Dispatchers.Main) {
                     //Log.d("FOLDERS", "getStartChats 1")
-
 
                     val folderUID = myDbManager.getFolderUIDByName(currentFolder.name)
                     val chatsDB = myDbManager.getChatsByFolder(folderUID)
@@ -296,6 +297,10 @@ class MainActivity : AppCompatActivity() {
                             numberLastChatTG += chats.size
 
                         }
+                    }
+                    else {
+                        isLoadingChatVK = false
+                        isLoadingChatTG = false
                     }
                 }
             }
@@ -379,9 +384,10 @@ class MainActivity : AppCompatActivity() {
            val firstVisibleItemPosition = layoutManager.findFirstVisibleItemPosition()
 
            if (!isLoadingChatVK &&!isLoadingChatTG &&  (firstVisibleItemPosition + visibleItemCount >= totalItemCount)) {
-               isLoadingChatVK = true
-               isLoadingChatTG = true
+               isLoadingChatVK = vk.isAuthorized()
+               isLoadingChatTG = tg.isAuthorized()
                useCase.getAllChats(numberChatOnPage, numberLastChatVK, numberLastChatTG) { chats ->
+                   Log.d("MM_LOG", "GET_ALL_CHATS")
                    GlobalScope.launch(Dispatchers.Main) {
                        if (chats.isNotEmpty()) {
                            if (chats[0].messenger == Messengers.VK) {
@@ -389,10 +395,13 @@ class MainActivity : AppCompatActivity() {
                                numberLastChatVK += chats.size
 
                            } else {
-                               isLoadingChatTG = false
                                numberLastChatTG += chats.size
-
+                               isLoadingChatTG = false
                            }
+                       }
+                       else {
+                           isLoadingChatVK = false
+                           isLoadingChatTG = false
                        }
                        val folderUID = myDbManager.getFolderUIDByName(currentFolder.name)
                        val chatsDB = myDbManager.getChatsByFolder(folderUID)

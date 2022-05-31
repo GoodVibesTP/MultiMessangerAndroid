@@ -218,6 +218,7 @@ object Telegram : Messenger {
     }
 
     fun logout() {
+        haveAuthorization = false
         client.send(
             TdApi.LogOut(),
             AuthorizationRequestHandler()
