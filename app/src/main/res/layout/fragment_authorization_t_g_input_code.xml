@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        tools:context="com.goodvibes.multimessenger.fragment.AuthorizationTGInputCode"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        >
+
+    <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/textInputAuthCode"
+            android:layout_marginTop="200dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginLeft="20dp"
+            app:layout_constraintTop_toTopOf="parent">
+
+        <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/edit_text_code_tg"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Enter code"
+                app:layout_constraintTop_toTopOf="@+id/textInputAuthCode" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <Button
+            android:text="Submit"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/button_submit_auth_code_tg"
+            android:layout_marginTop="270dp"
+            android:layout_marginRight="50dp"
+            android:layout_marginLeft="250dp"
+            app:layout_constraintTop_toBottomOf="@+id/textInputAuthCode" />
+
+
+</FrameLayout>
